@@ -5,9 +5,6 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Plus, Trash2, Edit, Bot } from 'lucide-react';
 import { useScripts } from '../hooks/useScripts';
 
-/**
- * Page d'accueil (Dashboard) pour lister, créer et gérer tous les scripts.
- */
 export const Dashboard: React.FC = () => {
   const { scripts, isLoading, addScript, deleteScript } = useScripts();
   const [newScriptName, setNewScriptName] = useState('');
@@ -20,7 +17,7 @@ export const Dashboard: React.FC = () => {
   };
 
   if (isLoading) {
-    return <div className="flex items-center justify-center h-screen">Chargement...</div>;
+    return <div className="flex items-center justify-center h-screen bg-slate-50">Chargement des scripts...</div>;
   }
 
   return (
@@ -40,6 +37,8 @@ export const Dashboard: React.FC = () => {
               value={newScriptName}
               onChange={(e) => setNewScriptName(e.target.value)}
               placeholder="Nom de votre nouveau script..."
+              // CORRECTION: Ajout de l'attribut `name`
+              name="new-script-name"
               className="flex-grow px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               onKeyDown={(e) => e.key === 'Enter' && handleCreateScript()}
             />

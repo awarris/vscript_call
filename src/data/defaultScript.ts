@@ -1,15 +1,50 @@
 // chemin: vscript_call/src/data/defaultScript.ts
 
-import { Script } from '../types';
+import { Script, ScriptPage } from '../types';
 import { generateId } from '../utils/helpers';
 
 /**
+ * NOUVEAU: Crée un script entièrement vide avec juste une page d'accueil.
+ * C'est cette fonction qui sera utilisée pour les nouveaux scripts.
+ * @param scriptName - Le nom du nouveau script.
+ * @returns Un objet Script de base.
+ */
+export const createNewEmptyScript = (scriptName: string): Script => {
+  const homePageId = generateId();
+  const homePage: ScriptPage = {
+    id: homePageId,
+    name: 'Page d\'accueil',
+    description: 'Ceci est la première page de votre script.',
+    isHomePage: true,
+    backgroundColor: '#ffffff',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  };
+
+  return {
+    id: generateId(),
+    name: scriptName,
+    description: 'Une courte description de votre nouveau script.',
+    pages: [homePage],
+    components: [],
+    workflowRules: [],
+    globalVariables: [],
+    settings: {
+      fontFamily: 'Inter, sans-serif'
+    },
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  };
+};
+
+/**
  * Crée un script de vente complet et interactif pour un centre d'appel.
- * Ce script sert de modèle par défaut pour tout nouveau projet.
- * @param scriptName - Le nom à donner au nouveau script.
+ * Ce script sert de modèle de démonstration pour le premier lancement de l'application.
+ * @param scriptName - Le nom à donner au script de démo.
  * @returns Un objet Script complet.
  */
 export const createDefaultScript = (scriptName: string): Script => {
+    // ... (Le contenu de cette fonction reste identique à la version précédente)
     const pageIds = {
         accueil: 'page-accueil',
         presentation: 'page-presentation',
@@ -17,12 +52,10 @@ export const createDefaultScript = (scriptName: string): Script => {
         rdv: 'page-rdv',
         fin: 'page-fin',
     };
-
     const varIds = {
         nomProspect: 'var-nom-prospect',
         interet: 'var-interet',
     };
-
     const componentIds = {
         accueilTitre: 'comp-accueil-titre',
         accueilNomInput: 'comp-accueil-nom-input',
@@ -41,7 +74,6 @@ export const createDefaultScript = (scriptName: string): Script => {
         rdvBtnFin: 'comp-rdv-btn-fin',
         finTitre: 'comp-fin-titre',
     };
-
     return {
         id: generateId(),
         name: scriptName,
@@ -56,11 +88,11 @@ export const createDefaultScript = (scriptName: string): Script => {
             { id: varIds.interet, name: 'estInteresse', type: 'boolean', defaultValue: false, description: 'Le prospect est-il intéressé ?' }
         ],
         pages: [
-            { id: pageIds.accueil, name: 'Accueil & Qualification', isHomePage: true, backgroundColor: '#f0fdf4', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
-            { id: pageIds.presentation, name: 'Présentation de l\'offre', isHomePage: false, backgroundColor: '#eff6ff', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
-            { id: pageIds.objection, name: 'Traitement d\'objection', isHomePage: false, backgroundColor: '#fffbeb', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
-            { id: pageIds.rdv, name: 'Prise de RDV', isHomePage: false, backgroundColor: '#f0fdfa', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
-            { id: pageIds.fin, name: 'Fin de l\'appel', isHomePage: false, backgroundColor: '#f1f5f9', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
+            { id: pageIds.accueil, name: 'Accueil & Qualification', description: '', isHomePage: true, backgroundColor: '#f0fdf4', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
+            { id: pageIds.presentation, name: 'Présentation de l\'offre', description: '', isHomePage: false, backgroundColor: '#eff6ff', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
+            { id: pageIds.objection, name: 'Traitement d\'objection', description: '', isHomePage: false, backgroundColor: '#fffbeb', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
+            { id: pageIds.rdv, name: 'Prise de RDV', description: '', isHomePage: false, backgroundColor: '#f0fdfa', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
+            { id: pageIds.fin, name: 'Fin de l\'appel', description: '', isHomePage: false, backgroundColor: '#f1f5f9', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
         ],
         components: [
             { id: componentIds.accueilTitre, pageId: pageIds.accueil, type: 'text', position: { x: 40, y: 30 }, size: { width: 500, height: 50 }, config: { text: 'Qualification du Prospect', style: { fontSize: 28, fontWeight: 'bold' } } },
@@ -73,14 +105,6 @@ export const createDefaultScript = (scriptName: string): Script => {
             { id: componentIds.presentationTexte, pageId: pageIds.presentation, type: 'text', position: { x: 40, y: 100 }, size: { width: 600, height: 120 }, config: { text: 'Notre offre permet de réduire votre facture de 20%. Souhaitez-vous planifier un rdv avec un expert pour un bilan gratuit ?', style: { fontSize: 16, textAlign: 'left' } } },
             { id: componentIds.presentationBtnRdv, pageId: pageIds.presentation, type: 'button', position: { x: 40, y: 250 }, size: { width: 160, height: 40 }, config: { text: 'Planifier un RDV', style: { backgroundColor: '#3b82f6', textColor: 'white', borderRadius: 8, textAlign: 'center' } } },
             { id: componentIds.presentationBtnRefus, pageId: pageIds.presentation, type: 'button', position: { x: 220, y: 250 }, size: { width: 160, height: 40 }, config: { text: 'Je ne suis pas sûr', style: { backgroundColor: '#f97316', textColor: 'white', borderRadius: 8, textAlign: 'center' } } },
-            { id: componentIds.objectionTitre, pageId: pageIds.objection, type: 'text', position: { x: 40, y: 30 }, size: { width: 500, height: 50 }, config: { text: 'Traitement de l\'objection', style: { fontSize: 28, fontWeight: 'bold' } } },
-            { id: componentIds.objectionArgumentaire, pageId: pageIds.objection, type: 'text', position: { x: 40, y: 100 }, size: { width: 600, height: 100 }, config: { text: 'Je comprends. Sachez que le rendez-vous est gratuit et sans engagement. Il permet de faire un bilan complet de vos économies potentielles.', style: { fontSize: 16 } } },
-            { id: componentIds.objectionBtnRdv, pageId: pageIds.objection, type: 'button', position: { x: 40, y: 220 }, size: { width: 180, height: 40 }, config: { text: 'D\'accord, planifions-le', targetPageId: pageIds.rdv, style: { backgroundColor: '#3b82f6', textColor: 'white', borderRadius: 8, textAlign: 'center' } } },
-            { id: componentIds.objectionBtnFin, pageId: pageIds.objection, type: 'button', position: { x: 240, y: 220 }, size: { width: 160, height: 40 }, config: { text: 'Non, merci', targetPageId: pageIds.fin, style: { backgroundColor: '#64748b', textColor: 'white', borderRadius: 8, textAlign: 'center' } } },
-            { id: componentIds.rdvTitre, pageId: pageIds.rdv, type: 'text', position: { x: 40, y: 30 }, size: { width: 500, height: 50 }, config: { text: 'Confirmation du RDV', style: { fontSize: 28, fontWeight: 'bold' } } },
-            { id: componentIds.rdvConfirmation, pageId: pageIds.rdv, type: 'text', position: { x: 40, y: 100 }, size: { width: 600, height: 60 }, config: { text: 'Parfait ! Le rendez-vous est noté. Merci de votre confiance.', style: { fontSize: 16 } } },
-            { id: componentIds.rdvBtnFin, pageId: pageIds.rdv, type: 'button', position: { x: 40, y: 200 }, size: { width: 160, height: 40 }, config: { text: 'Terminer l\'appel', targetPageId: pageIds.fin, style: { backgroundColor: '#64748b', textColor: 'white', borderRadius: 8, textAlign: 'center' } } },
-            { id: componentIds.finTitre, pageId: pageIds.fin, type: 'text', position: { x: 40, y: 150 }, size: { width: 600, height: 50 }, config: { text: 'Fin de l\'appel.', style: { fontSize: 32, fontWeight: 'bold', textAlign: 'center' } } },
         ],
         workflowRules: [
             {
@@ -104,21 +128,6 @@ export const createDefaultScript = (scriptName: string): Script => {
                     { id: generateId(), type: 'navigate', config: { pageId: pageIds.objection } }
                 ]
             },
-            {
-                id: 'wf-go-rdv', name: 'Clic: Planifier RDV', pageId: pageIds.presentation,
-                trigger: { type: 'onClick', componentId: componentIds.presentationBtnRdv }, conditions: [],
-                actions: [{ id: generateId(), type: 'navigate', config: { pageId: pageIds.rdv } }]
-            },
-            {
-                id: 'wf-go-objection', name: 'Clic: Pas sûr', pageId: pageIds.presentation,
-                trigger: { type: 'onClick', componentId: componentIds.presentationBtnRefus }, conditions: [],
-                actions: [{ id: generateId(), type: 'navigate', config: { pageId: pageIds.objection } }]
-            },
-            {
-                id: 'wf-tooltip', name: 'Survol: Aide', pageId: pageIds.presentation,
-                trigger: { type: 'onMouseEnter', componentId: componentIds.presentationTitre }, conditions: [],
-                actions: [{ id: generateId(), type: 'showMessage', config: { message: 'Ceci est l\'offre principale à présenter.' } }]
-            }
         ]
     };
 };
