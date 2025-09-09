@@ -1,10 +1,11 @@
-// chemin: vscript_call/src/pages/ScriptEditor.tsx
+// chemin: src/pages/ScriptEditor.tsx
 
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import { DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { useScripts } from '../hooks/useScripts';
+// CORRECTION: On utilise notre nouveau hook de contexte
+import { useScriptsContext } from '../context/ScriptsContext';
 import { useHistoryState } from '../hooks/useHistoryState';
 import { Script, Component, ComponentConfig } from '../types';
 import { generateId } from '../utils/helpers';
@@ -24,7 +25,8 @@ import { ArrowLeft } from 'lucide-react';
 export const ScriptEditor: React.FC = () => {
   const { scriptId } = useParams<{ scriptId: string }>();
   const navigate = useNavigate();
-  const { getScript, updateScript, isLoading } = useScripts();
+  // CORRECTION: On récupère les données depuis le contexte partagé
+  const { getScript, updateScript, isLoading } = useScriptsContext();
 
   const {
     state: script,
@@ -36,21 +38,15 @@ export const ScriptEditor: React.FC = () => {
     canRedo,
   } = useHistoryState<Script | null>(null);
 
-  // CORRECTION : Ajout d'un état pour savoir si l'éditeur a été initialisé.
-  // C'est la clé pour casser la boucle infinie.
   const [isInitialized, setIsInitialized] = useState(false);
-
   const [currentPageId, setCurrentPageId] = useState<string | null>(null);
   const [selectedComponentId, setSelectedComponentId] = useState<string | null>(null);
   const [isPreviewMode, setIsPreviewMode] = useState(false);
   const [device, setDevice] = useState<'mobile' | 'tablet' | 'desktop'>('desktop');
   const [activePanel, setActivePanel] = useState<string>('pages');
 
-  // Logique de chargement, maintenant protégée par le flag `isInitialized`
+  // Logique de chargement, qui dépend maintenant du `isLoading` du contexte
   useEffect(() => {
-    // Ne rien faire si:
-    // 1. La liste des scripts est encore en cours de chargement depuis le localStorage.
-    // 2. L'éditeur a déjà été initialisé avec succès.
     if (isLoading || isInitialized) {
       return;
     }
@@ -60,7 +56,6 @@ export const ScriptEditor: React.FC = () => {
       resetState(loadedScript);
       const homePage = loadedScript.pages.find(p => p.isHomePage) || loadedScript.pages[0];
       setCurrentPageId(homePage?.id || null);
-      // On marque l'éditeur comme initialisé pour ne plus jamais refaire ce chargement.
       setIsInitialized(true);
     } else {
       console.error(`Script avec l'ID "${scriptId}" non trouvé.`);
@@ -68,15 +63,14 @@ export const ScriptEditor: React.FC = () => {
     }
   }, [scriptId, getScript, resetState, navigate, isLoading, isInitialized]);
 
-  // Sauvegarde automatique du script à chaque modification
+  // Sauvegarde automatique du script
   useEffect(() => {
-    // On ne sauvegarde que si l'éditeur est initialisé et que le script existe.
     if (script && isInitialized) {
       updateScript(script.id, script);
     }
   }, [script, updateScript, isInitialized]);
 
-  // Données dérivées (calculées à partir de l'état)
+  // Le reste des callbacks et de la logique du composant est identique
   const currentPage = useMemo(() => script?.pages.find(page => page.id === currentPageId), [script?.pages, currentPageId]);
   const currentPageComponents = useMemo(() => script?.components.filter(comp => comp.pageId === currentPageId) || [], [script?.components, currentPageId]);
   const selectedComponent = useMemo(() => script?.components.find(c => c.id === selectedComponentId), [script?.components, selectedComponentId]);
@@ -90,7 +84,7 @@ export const ScriptEditor: React.FC = () => {
           return newScriptState;
       });
   }, [setScriptWithHistory]);
-  
+
   const addComponent = useCallback((type: string, config: ComponentConfig, size: {width: number, height: number}, position?: { x: number; y: number }) => {
     if (!currentPageId || !script) return '';
     const newComponent: Component = {
@@ -126,7 +120,6 @@ export const ScriptEditor: React.FC = () => {
      }
   }, [script, handleSetScript]);
 
-  // Si le script n'est pas encore chargé (ou si le chargement initial de la liste est en cours)
   if (isLoading || !script) {
     return <div className="flex items-center justify-center h-screen bg-slate-100 text-slate-600">Chargement de l'éditeur...</div>;
   }

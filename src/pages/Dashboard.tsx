@@ -1,18 +1,21 @@
-// chemin: vscript_call/src/pages/Dashboard.tsx
+// chemin: src/pages/Dashboard.tsx
 
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Plus, Trash2, Edit, Bot } from 'lucide-react';
-import { useScripts } from '../hooks/useScripts';
+// CORRECTION: On utilise notre nouveau hook de contexte
+import { useScriptsContext } from '../context/ScriptsContext';
 
 export const Dashboard: React.FC = () => {
-  const { scripts, isLoading, addScript, deleteScript } = useScripts();
+  // CORRECTION: On récupère les données depuis le contexte partagé
+  const { scripts, isLoading, addScript, deleteScript } = useScriptsContext();
   const [newScriptName, setNewScriptName] = useState('');
   const navigate = useNavigate();
 
   const handleCreateScript = () => {
     const name = newScriptName.trim() || `Nouveau Script ${scripts.length + 1}`;
     const newScriptId = addScript(name);
+    // La navigation fonctionnera car l'état est mis à jour instantanément partout
     navigate(`/editor/${newScriptId}`);
   };
 
@@ -24,7 +27,7 @@ export const Dashboard: React.FC = () => {
     <div className="bg-slate-50 min-h-screen">
       <div className="max-w-5xl mx-auto py-12 px-4">
         <header className="mb-10 text-center">
-            <Bot size={48} className="mx-auto text-blue-600" />
+          <Bot size={48} className="mx-auto text-blue-600" />
           <h1 className="text-4xl font-bold text-slate-800 mt-4">V-Script Creator</h1>
           <p className="text-slate-500 mt-2">Gérez vos scripts interactifs ou créez-en un nouveau.</p>
         </header>
@@ -37,7 +40,6 @@ export const Dashboard: React.FC = () => {
               value={newScriptName}
               onChange={(e) => setNewScriptName(e.target.value)}
               placeholder="Nom de votre nouveau script..."
-              // CORRECTION: Ajout de l'attribut `name`
               name="new-script-name"
               className="flex-grow px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               onKeyDown={(e) => e.key === 'Enter' && handleCreateScript()}
@@ -53,13 +55,13 @@ export const Dashboard: React.FC = () => {
         </div>
 
         <div className="space-y-4">
-            <h2 className="text-xl font-semibold text-slate-700">Scripts existants</h2>
+          <h2 className="text-xl font-semibold text-slate-700">Scripts existants</h2>
           {scripts.length > 0 ? scripts.map(script => (
             <div key={script.id} className="bg-white p-5 rounded-xl shadow-lg border border-slate-200 flex items-center justify-between hover:border-blue-500 transition-colors">
               <div>
                 <h3 className="text-lg font-semibold text-slate-800">{script.name}</h3>
                 <p className="text-sm text-slate-500">{script.description}</p>
-                 <p className="text-xs text-slate-400 mt-1">Dernière modification: {new Date(script.updatedAt).toLocaleString()}</p>
+                <p className="text-xs text-slate-400 mt-1">Dernière modification: {new Date(script.updatedAt).toLocaleString()}</p>
               </div>
               <div className="flex items-center space-x-2">
                 <Link
@@ -84,7 +86,7 @@ export const Dashboard: React.FC = () => {
             </div>
           )) : (
             <div className="text-center py-10 bg-white rounded-xl border border-dashed">
-                <p className="text-slate-500">Aucun script trouvé. Créez votre premier script !</p>
+              <p className="text-slate-500">Aucun script trouvé. Créez votre premier script !</p>
             </div>
           )}
         </div>
