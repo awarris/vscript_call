@@ -1,7 +1,7 @@
 // chemin: src/components/Canvas/ComponentRenderer.tsx
 
 import React from 'react';
-import { useDrag } from 'react-dnd';
+import { motion } from 'framer-motion';
 import { Trash2, Copy } from 'lucide-react';
 import { Component } from '../../types';
 
@@ -15,50 +15,32 @@ interface ComponentRendererProps {
 }
 
 export const ComponentRenderer: React.FC<ComponentRendererProps> = ({
-  component, isSelected, onSelect, onRemove, onDuplicate
+  component, isSelected, onSelect, onUpdate, onRemove, onDuplicate
 }) => {
-  const [{ isDragging }, drag, dragPreview] = useDrag(() => ({
-    type: 'component',
-    item: { type: 'component', id: component.id },
-    collect: (monitor) => ({ isDragging: !!monitor.isDragging() }),
-  }));
 
-  /**
-   * Moteur de rendu des composants pour l'éditeur.
-   * Il affiche une version non-interactive des composants.
-   */
   const renderComponentContent = () => {
     const style = {
         width: '100%', height: '100%',
         ...component.config.style,
-        // On s'assure que le contenu ne déborde pas
         overflow: 'hidden',
         boxSizing: 'border-box' as const,
+        // On s'assure que les clics ne sont pas interceptés par les éléments enfants
+        pointerEvents: 'none' as const,
     };
 
     switch (component.type) {
-      case 'paragraphe':
-      case 'h1':
+      case 'paragraphe': case 'h1':
         return <div style={style}>{component.config.value}</div>;
-      
       case 'button':
         return <button style={style}>{component.config.value}</button>;
-      
-      case 'input':
-      case 'inputDate':
-      case 'inputTime':
+      case 'input': case 'inputDate': case 'inputTime':
         return <input {...component.config.attributes} style={style} readOnly />;
-      
       case 'textarea':
         return <textarea {...component.config.attributes} style={style} readOnly />;
-      
       case 'image':
         return <img src={component.config.src} alt={component.config.alt} style={style} />;
-      
       case 'iframe':
-        // On affiche un placeholder dans l'éditeur pour éviter les problèmes de sécurité/performance
-        return <div style={{...style, display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#e2e8f0' }}>Iframe Content</div>;
-
+        return <div style={{...style, display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#e2e8f0' }}>Contenu Iframe</div>;
       case 'select':
         return (
             <select style={style} disabled>
@@ -67,35 +49,42 @@ export const ComponentRenderer: React.FC<ComponentRendererProps> = ({
                 ))}
             </select>
         );
-
       case 'checkbox':
         return <div style={style}><input type="checkbox" checked={component.config.checked} readOnly /> <label>{component.config.label}</label></div>;
-
-      case 'divPannel':
-      case 'ficheClient':
-        return <div style={style}>{/* Conteneur vide */}</div>;
-
+      case 'divPannel': case 'ficheClient':
+        return <div style={style}></div>;
       default:
         return <div style={{...style, border: '1px dashed red'}}>Composant inconnu: {component.type}</div>;
     }
   };
 
   return (
-    <div
-      ref={dragPreview}
+    <motion.div
+      // CORRECTION : On utilise motion.div pour l'animation et le déplacement
+      drag
+      onDragEnd={(event, info) => {
+        onUpdate(component.id, {
+          position: {
+            x: component.position.x + info.offset.x,
+            y: component.position.y + info.offset.y,
+          }
+        });
+      }}
+      dragMomentum={false} // Pour un arrêt net
       style={{
         position: 'absolute',
-        left: component.position.x,
-        top: component.position.y,
+        x: component.position.x,
+        y: component.position.y,
         width: component.size.width,
         height: component.size.height,
-        opacity: isDragging ? 0.5 : 1,
         zIndex: isSelected ? 10 : 1,
+        cursor: 'grab',
       }}
-      onMouseDown={(e) => { e.stopPropagation(); onSelect(); }}
+      whileDrag={{ cursor: 'grabbing' }}
+      onMouseDown={onSelect}
       className={`group transition-all duration-200 ${isSelected ? 'outline outline-2 outline-offset-2 outline-blue-500' : ''}`}
     >
-      <div className="w-full h-full" ref={drag}>
+      <div className="w-full h-full">
         {renderComponentContent()}
       </div>
 
@@ -106,6 +95,6 @@ export const ComponentRenderer: React.FC<ComponentRendererProps> = ({
           <button onClick={() => onRemove(component.id)} className="hover:bg-blue-700 p-0.5 rounded" title="Supprimer"><Trash2 size={14} /></button>
         </div>
       )}
-    </div>
+    </motion.div>
   );
 };
