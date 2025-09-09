@@ -1,4 +1,26 @@
-// chemin: vscript_call/src/types/index.ts
+// chemin: src/types/index.ts
+
+/**
+ * Style d'un composant, flexible pour accepter n'importe quelle propriété CSS.
+ */
+export interface ComponentStyle {
+  [key: string]: any;
+}
+
+/**
+ * Configuration d'un composant.
+ * Elle est maintenant un objet flexible pour stocker n'importe quelle structure.
+ */
+export interface ComponentConfig {
+  value?: any;
+  text?: string;
+  placeholder?: string;
+  label?: string;
+  style?: ComponentStyle;
+  targetPageId?: string;
+  // Permet de stocker n'importe quelle autre propriété (src, alt, options, attributes, etc.)
+  [key: string]: any;
+}
 
 /**
  * Définit la structure d'un composant visuel sur le canevas.
@@ -9,59 +31,22 @@ export interface Component {
   config: ComponentConfig;
   position: { x: number; y: number };
   size: { width: number; height: number };
-  parentId?: string;
   pageId: string;
 }
 
-/**
- * Configuration spécifique d'un composant (contenu et style).
- */
-export interface ComponentConfig {
-  text?: string;
-  placeholder?: string;
-  options?: string[];
-  label?: string;
-  style?: ComponentStyle;
-  targetPageId?: string; // Pour la navigation
-}
-
-/**
- * Propriétés de style d'un composant.
- */
-export interface ComponentStyle {
-  backgroundColor?: string;
-  textColor?: string;
-  borderColor?: string;
-  borderWidth?: number;
-  borderRadius?: number;
-  padding?: number;
-  fontSize?: number;
-  fontWeight?: 'normal' | 'bold' | '100' | '200' | '300' | '400' | '500' | '600' | '700' | '800' | '900';
-  textAlign?: 'left' | 'center' | 'right';
-}
-
-/**
- * Liste des déclencheurs de workflow possibles.
- */
-export type WorkflowTriggerType = 
-  | 'onClick' 
-  | 'onDoubleClick' 
-  | 'onMouseEnter' 
+export type WorkflowTriggerType =
+  | 'onClick'
+  | 'onDoubleClick'
+  | 'onMouseEnter'
   | 'onMouseLeave'
-  | 'onChange' 
+  | 'onChange'
   | 'onPageLoad';
 
-/**
- * Le déclencheur d'un workflow (ex: un clic sur un bouton).
- */
 export interface WorkflowTrigger {
   type: WorkflowTriggerType;
   componentId?: string;
 }
 
-/**
- * Condition pour l'exécution d'un workflow.
- */
 export interface WorkflowCondition {
   id: string;
   variableId: string;
@@ -69,9 +54,6 @@ export interface WorkflowCondition {
   value: any;
 }
 
-/**
- * Action exécutée par un workflow.
- */
 export interface WorkflowAction {
   id: string;
   type: 'navigate' | 'setVariable' | 'showMessage';
@@ -79,7 +61,7 @@ export interface WorkflowAction {
     pageId?: string;
     variableId?: string;
     value?: any;
-    valueFrom?: { // Pour récupérer dynamiquement la valeur d'un composant
+    valueFrom?: {
       componentId: string;
       property: 'value';
     };
@@ -87,9 +69,6 @@ export interface WorkflowAction {
   };
 }
 
-/**
- * Règle de workflow complète.
- */
 export interface WorkflowRule {
   id: string;
   name: string;
@@ -99,9 +78,6 @@ export interface WorkflowRule {
   actions: WorkflowAction[];
 }
 
-/**
- * Variable globale pour stocker des données.
- */
 export interface GlobalVariable {
   id: string;
   name: string;
@@ -110,35 +86,26 @@ export interface GlobalVariable {
   description?: string;
 }
 
-/**
- * Élément de la bibliothèque de composants.
- */
 export interface ComponentLibraryItem {
   id: string;
   name: string;
-  category: 'display' | 'action' | 'input' | 'layout';
+  category: string; // Type plus générique pour accepter "Basique", "Avancé", etc.
   icon: string;
   description: string;
   defaultConfig: ComponentConfig;
   defaultSize: { width: number; height: number };
 }
 
-/**
- * Page d'un script.
- */
 export interface ScriptPage {
   id: string;
   name: string;
+  description?: string;
   isHomePage: boolean;
   backgroundColor?: string;
   createdAt: string;
   updatedAt: string;
-  description?: string;
 }
 
-/**
- * Structure principale d'un script.
- */
 export interface Script {
   id: string;
   name: string;
@@ -154,9 +121,6 @@ export interface Script {
   updatedAt: string;
 }
 
-/**
- * Objet pour les éléments glissables.
- */
 export interface DragItem {
   type: 'component' | 'new-component';
   id?: string;
@@ -165,9 +129,6 @@ export interface DragItem {
   size?: { width: number; height: number };
 }
 
-/**
- * État de l'historique pour l'undo/redo.
- */
 export interface HistoryState<T> {
   past: T[];
   present: T;

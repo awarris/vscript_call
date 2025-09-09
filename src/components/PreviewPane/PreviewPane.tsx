@@ -1,7 +1,7 @@
-// chemin: vscript_call/src/components/PreviewPane/PreviewPane.tsx
+// chemin: src/components/PreviewPane/PreviewPane.tsx
 
 import React, { useState, useEffect } from 'react';
-import { Component, Script, WorkflowRule } from '../../types';
+import { Component, Script, WorkflowTriggerType } from '../../types';
 import { getDeviceWidth } from '../../utils/helpers';
 
 interface PreviewPaneProps {
@@ -12,21 +12,15 @@ interface PreviewPaneProps {
 }
 
 export const PreviewPane: React.FC<PreviewPaneProps> = ({
-  script,
-  currentPageId,
-  device,
-  onNavigateToPage,
+  script, currentPageId, device, onNavigateToPage,
 }) => {
-  // État pour les variables globales du script
   const [variables, setVariables] = useState<Record<string, any>>({});
-  // État pour les valeurs des composants de la page actuelle (ex: champs de saisie)
   const [componentValues, setComponentValues] = useState<Record<string, any>>({});
   
   const currentPage = script.pages.find(p => p.id === currentPageId);
   const components = script.components.filter(c => c.pageId === currentPageId);
   const workflowRules = script.workflowRules.filter(r => r.pageId === currentPageId);
 
-  // Initialisation des variables globales à partir du script
   useEffect(() => {
     const initialVariables: Record<string, any> = {};
     script.globalVariables.forEach(variable => {
@@ -35,45 +29,28 @@ export const PreviewPane: React.FC<PreviewPaneProps> = ({
     setVariables(initialVariables);
   }, [script.globalVariables]);
 
-  /**
-   * Moteur d'exécution des workflows.
-   * @param triggerType - Le type d'événement (ex: 'onClick', 'onChange').
-   * @param componentId - L'ID du composant qui a déclenché l'événement.
-   */
-  const executeWorkflow = (triggerType: WorkflowRule['trigger']['type'], componentId: string) => {
+  useEffect(() => { setComponentValues({}); }, [currentPageId]);
+
+  const executeWorkflow = (triggerType: WorkflowTriggerType, componentId: string) => {
     const applicableRules = workflowRules.filter(rule => 
       rule.trigger.type === triggerType && rule.trigger.componentId === componentId
     );
-
     for (const rule of applicableRules) {
-      // TODO: Implémenter la vérification des conditions ici
-
-      // Exécuter chaque action de la règle
       for (const action of rule.actions) {
         switch (action.type) {
           case 'navigate':
-            if (action.config.pageId) {
-              onNavigateToPage(action.config.pageId);
-            }
+            if (action.config.pageId) onNavigateToPage(action.config.pageId);
             break;
-
           case 'setVariable':
             const variableToUpdate = script.globalVariables.find(v => v.id === action.config.variableId);
             if (variableToUpdate) {
               let newValue = action.config.value;
-
-              // Si la valeur doit provenir d'un autre composant
               if (action.config.valueFrom) {
                 newValue = componentValues[action.config.valueFrom.componentId] || '';
               }
-
-              setVariables(prev => ({
-                ...prev,
-                [variableToUpdate.name]: newValue,
-              }));
+              setVariables(prev => ({ ...prev, [variableToUpdate.name]: newValue }));
             }
             break;
-            
           case 'showMessage':
             alert(action.config.message);
             break;
@@ -82,86 +59,82 @@ export const PreviewPane: React.FC<PreviewPaneProps> = ({
     }
   };
 
-  /**
-   * Gère le changement de valeur d'un composant de saisie.
-   * @param componentId - L'ID du composant.
-   * @param value - La nouvelle valeur.
-   */
   const handleComponentValueChange = (componentId: string, value: any) => {
     setComponentValues(prev => ({...prev, [componentId]: value}));
     executeWorkflow('onChange', componentId);
   }
 
-  // Rendu d'un composant individuel en mode prévisualisation
+  /**
+   * Moteur de rendu pour la prévisualisation interactive.
+   */
   const renderPreviewComponent = (component: Component) => {
     const style = {
-      ...component.config.style,
-      width: '100%',
-      height: '100%',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: component.config.style?.textAlign === 'center' ? 'center' : 'flex-start',
-      cursor: 'pointer',
+        width: '100%', height: '100%', ...component.config.style,
+        boxSizing: 'border-box' as const,
+    };
+    
+    const eventHandlers = {
+      onClick: () => executeWorkflow('onClick', component.id),
+      onDoubleClick: () => executeWorkflow('onDoubleClick', component.id),
+      onMouseEnter: () => executeWorkflow('onMouseEnter', component.id),
+      onMouseLeave: () => executeWorkflow('onMouseLeave', component.id),
     };
 
     switch (component.type) {
-      case 'text':
-        return <div style={style}>{component.config.text}</div>;
+        case 'paragraphe':
+        case 'h1':
+            return <div style={style} {...eventHandlers}>{component.config.value}</div>;
+        
+        case 'button':
+            return <button style={{...style, cursor: 'pointer'}} {...eventHandlers}>{component.config.value}</button>;
+        
+        case 'input':
+        case 'inputDate':
+        case 'inputTime':
+            return <input {...component.config.attributes} style={style} value={componentValues[component.id] || ''} onChange={(e) => handleComponentValueChange(component.id, e.target.value)} {...eventHandlers} />;
+        
+        case 'textarea':
+            return <textarea {...component.config.attributes} style={style} value={componentValues[component.id] || ''} onChange={(e) => handleComponentValueChange(component.id, e.target.value)} {...eventHandlers} />;
+        
+        case 'image':
+            return <img src={component.config.src} alt={component.config.alt} style={style} {...eventHandlers} />;
+        
+        case 'iframe':
+            return <iframe src={component.config.src} style={style} title="iframe content" />;
 
-      case 'button':
-        return (
-          <button 
-            style={style} 
-            onClick={() => executeWorkflow('onClick', component.id)}
-          >
-            {component.config.text}
-          </button>
-        );
+        case 'select':
+            return (
+                <select style={style} value={componentValues[component.id] || ''} onChange={(e) => handleComponentValueChange(component.id, e.target.value)} {...eventHandlers}>
+                    {(component.config.options || []).map((opt: any, index: number) => (
+                        <option key={index} value={opt.value}>{opt.label}</option>
+                    ))}
+                </select>
+            );
 
-      case 'input':
-        return (
-          <input
-            type="text"
-            placeholder={component.config.placeholder}
-            style={style}
-            value={componentValues[component.id] || ''}
-            onChange={(e) => handleComponentValueChange(component.id, e.target.value)}
-          />
-        );
+        case 'checkbox':
+            return <div style={style}><input type="checkbox" checked={componentValues[component.id] || component.config.checked} onChange={(e) => handleComponentValueChange(component.id, e.target.checked)} {...eventHandlers} /> <label>{component.config.label}</label></div>;
 
-      default:
-        return <div style={style}>Preview: {component.type}</div>;
+        case 'divPannel':
+        case 'ficheClient':
+            return <div style={style} {...eventHandlers}></div>;
+
+        default:
+            return <div style={{...style, border: '1px dashed red'}}>Composant inconnu: {component.type}</div>;
     }
   };
-
-  const canvasWidth = getDeviceWidth(device);
 
   return (
     <div className="flex-1 bg-slate-100 overflow-auto p-8 flex justify-center items-center">
       <div
         className="bg-white rounded-xl shadow-2xl border border-slate-200 relative overflow-hidden"
-        style={{
-          width: canvasWidth,
-          minHeight: '600px',
-          backgroundColor: currentPage?.backgroundColor || '#ffffff',
-        }}
+        style={{ width: getDeviceWidth(device), minHeight: '600px', backgroundColor: currentPage?.backgroundColor || '#ffffff' }}
       >
         {components.map(component => (
-          <div
-            key={component.id}
-            style={{
-              position: 'absolute',
-              left: component.position.x,
-              top: component.position.y,
-              width: component.size.width,
-              height: component.size.height,
-            }}
-          >
+          <div key={component.id} style={{ position: 'absolute', left: component.position.x, top: component.position.y, width: component.size.width, height: component.size.height }}>
             {renderPreviewComponent(component)}
           </div>
         ))}
 
-        {/* Panneau de débogage des variables */}
         {Object.keys(variables).length > 0 && (
           <div className="absolute bottom-4 right-4 bg-slate-800 bg-opacity-80 text-white p-3 rounded-lg text-xs backdrop-blur-sm shadow-xl">
             <div className="font-semibold mb-2 text-blue-300 border-b border-slate-600 pb-1">Variables en direct</div>

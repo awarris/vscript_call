@@ -1,53 +1,73 @@
-// chemin: vscript_call/src/components/panels/ComponentPalette.tsx
+// chemin: src/components/panels/ComponentPalette.tsx
 
 import React from 'react';
 import * as Icons from 'lucide-react';
 import { useDrag } from 'react-dnd';
 import { ComponentLibraryItem, ComponentConfig } from '../../types';
 
-// La bibliothèque de composants disponibles, enrichie avec des tailles par défaut
-const componentLibrary: ComponentLibraryItem[] = [
-    // ... (copier le contenu de l'ancien componentLibrary)
-    {
-        id: 'text',
-        name: 'Texte',
-        category: 'display',
-        icon: 'Type',
-        description: 'Affiche un texte statique',
-        defaultConfig: {
-            text: 'Texte par défaut',
-            style: { fontSize: 16, textColor: '#374151', padding: 8 }
-        },
-        defaultSize: { width: 200, height: 40 }
-    },
-    {
-        id: 'button',
-        name: 'Bouton',
-        category: 'action',
-        icon: 'MousePointerClick',
-        description: 'Un bouton cliquable pour les actions',
-        defaultConfig: {
-            text: 'Cliquez-moi',
-            style: { backgroundColor: '#3B82F6', textColor: '#ffffff', borderRadius: 8, padding: 12, textAlign: 'center' }
-        },
-        defaultSize: { width: 150, height: 40 }
-    },
-    {
-        id: 'input',
-        name: 'Champ Texte',
-        category: 'input',
-        icon: 'Keyboard',
-        description: 'Un champ pour la saisie de texte',
-        defaultConfig: {
-            placeholder: 'Saisir du texte...',
-            style: { borderColor: '#D1D5DB', borderWidth: 1, borderRadius: 6, padding: 10 }
-        },
-        defaultSize: { width: 220, height: 40 }
-    },
-    // Ajoutez ici d'autres composants comme 'select', 'checkbox', 'divPanel', etc.
+// Votre liste complète d'objets est directement intégrée ici.
+const newTools = [
+    { "type": "paragraphe", "value": "Votre texte ici...", "style": { "padding": "10px", "fontSize": "16px", "lineHeight": "1.5", "color": "#222", "position": "absolute", "top": "0", "left": "10px" } },
+    { "type": "h1", "value": "Titre de niveau 1", "style": { "fontSize": "2.25rem", "fontWeight": "700", "color": "#1e293b", "position": "absolute", "top": "0", "left": "10px" } },
+    { "type": "button", "value": "Cliquez ici", "style": { "backgroundColor": "#3b82f6", "color": "white", "border": "none", "padding": "12px 24px", "textAlign": "center", "fontSize": "16px", "borderRadius": "8px", "cursor": "pointer", "position": "absolute", "top": "0", "left": "10px" } },
+    { "type": "input", "value": "", "attributes": { "type": "text", "placeholder": "Saisissez du texte" }, "style": { "padding": "8px", "border": "1px solid #cbd5e1", "borderRadius": "6px", "width": "200px", "position": "absolute", "top": "0", "left": "10px" } },
+    { "type": "textarea", "value": "", "attributes": { "rows": 4, "placeholder": "Écrivez votre message..." }, "style": { "padding": "10px", "border": "1px solid #cbd5e1", "borderRadius": "6px", "width": "300px", "height": "100px", "position": "absolute", "top": "0", "left": "10px" } },
+    { "type": "image", "src": "https://via.placeholder.com/300x200.png?text=Image", "alt": "placeholder image", "style": { "width": "300px", "height": "200px", "objectFit": "cover", "position": "absolute", "top": "0", "left": "10px" } },
+    { "type": "select", "name": "listederoulante", "style": { "padding": "10px 12px", "border": "1px solid #d1d5db", "borderRadius": "6px", "width": "220px", "position": "absolute", "top": "0", "left": "10px" }, "options": [ { "value": "option1", "label": "Option 1" }, { "value": "option2", "label": "Option 2" } ] },
+    { "type": "checkbox", "label": "Accepter les conditions", "checked": false, "style": {"position": "absolute", "top": "0", "left": "10px"} },
+    { "type": "inputDate", "value" : "", "style": { "border": "1px solid #cbd5e1", "padding": "8px", "borderRadius": "6px", "position": "absolute", "top": "0", "left": "10px" } },
+    { "type": "inputTime", "value": "12:00", "style": { "border": "1px solid #cbd5e1", "padding": "8px", "borderRadius": "6px", "position": "absolute", "top": "0", "left": "10px" } },
+    { "type": "divPannel", "style": { "width": "400px", "height": "300px", "minHeight": "50px", "border": "1px dashed #9ca3af", "backgroundColor": "#f8fafc", "borderRadius": "8px", "position": "absolute", "top": "0", "left": "10px" } },
+    { "type": "iframe", "src": "https://www.wikipedia.org", "style": { "width": "400px", "height": "300px", "border": "none", "position": "absolute", "top": "0", "left": "10px" } },
+    { "type": "ficheClient", "title": "Fiche Client", "style": { "width": "470px", "height": "400px", "border": "1px solid #e2e8f0", "borderRadius": "8px", "padding": "20px", "backgroundColor": "#f8fafc", "position": "absolute", "top": "0", "left": "10px" } },
 ];
 
-// Sous-composant pour un élément draggable de la palette
+// On transforme la liste en un format que notre application comprend.
+const componentLibrary: ComponentLibraryItem[] = newTools.map(tool => {
+    const typeToIcon: { [key: string]: string } = {
+        paragraphe: 'Pilcrow', h1: 'Heading1', button: 'MousePointerClick',
+        input: 'Keyboard', textarea: 'Textarea', image: 'Image',
+        select: 'ChevronDownSquare', checkbox: 'CheckSquare', inputDate: 'Calendar',
+        inputTime: 'Clock', divPannel: 'RectangleHorizontal', iframe: 'Globe',
+        ficheClient: 'UserSquare',
+    };
+    
+    // CORRECTION : Logique de nettoyage des styles plus robuste et sûre
+    const originalStyle = tool.style || {};
+    const cleanStyle: { [key: string]: any } = {};
+    const forbiddenKeys = ['position', 'top', 'left', 'zIndex', 'margin', 'marginTop', 'marginRight', 'marginBottom', 'marginLeft'];
+    
+    // On copie toutes les clés de style SAUF celles qui sont interdites
+    for (const key in originalStyle) {
+        if (!forbiddenKeys.includes(key)) {
+            cleanStyle[key] = originalStyle[key];
+        }
+    }
+
+    // On crée l'objet de configuration sans la propriété 'type'
+    const { type, ...restOfTool } = tool;
+    const config: ComponentConfig = {
+        ...restOfTool,
+        style: cleanStyle,
+    };
+    
+    return {
+        id: tool.type,
+        name: tool.type.charAt(0).toUpperCase() + tool.type.slice(1).replace(/_/g, ' '),
+        category: ['paragraphe', 'h1', 'image'].includes(tool.type) ? 'Affichage' : ['button', 'input', 'textarea', 'select', 'checkbox', 'inputDate', 'inputTime'].includes(tool.type) ? 'Formulaire' : 'Avancé',
+        icon: typeToIcon[tool.type] || 'Box',
+        description: `Composant de type ${tool.type}`,
+        defaultConfig: config,
+        // On s'assure que parseInt ne reçoit jamais `undefined`
+        defaultSize: {
+            width: parseInt(tool.style?.width || '0', 10) || 250,
+            height: parseInt(tool.style?.height || '0', 10) || (tool.type === 'textarea' ? 100 : 50),
+        },
+    };
+});
+
+
+// Le reste du composant (logique d'affichage) reste inchangé
 const DraggableComponent: React.FC<{ item: ComponentLibraryItem }> = ({ item }) => {
   const [{ isDragging }, drag] = useDrag(() => ({
     type: 'new-component',
@@ -57,12 +77,9 @@ const DraggableComponent: React.FC<{ item: ComponentLibraryItem }> = ({ item }) 
       config: item.defaultConfig,
       size: item.defaultSize
     },
-    collect: (monitor) => ({
-      isDragging: !!monitor.isDragging(),
-    }),
+    collect: (monitor) => ({ isDragging: !!monitor.isDragging() }),
   }));
 
-  // Récupère dynamiquement le composant icône à partir de son nom
   const IconComponent = Icons[item.icon as keyof typeof Icons] as React.ElementType || Icons.Box;
 
   return (
@@ -84,7 +101,7 @@ interface ComponentPaletteProps {
 }
 
 export const ComponentPalette: React.FC<ComponentPaletteProps> = () => {
-  const categories = Array.from(new Set(componentLibrary.map(item => item.category)));
+  const categories = [...new Set(componentLibrary.map(item => item.category))];
 
   return (
     <div className="space-y-6">
