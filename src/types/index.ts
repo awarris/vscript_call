@@ -101,7 +101,12 @@ export interface WorkflowAction {
     pageId?: string;
     // Pour 'setVariable'
     variableId?: string;
-    value?: any;
+    value?: any; // Valeur statique
+    // NOUVEAU: Pour récupérer une valeur dynamiquement depuis un composant
+    valueFrom?: {
+      componentId: string;
+      property: 'value'; // ex: la valeur d'un champ de saisie
+    };
     // Pour 'showMessage'
     message?: string;
     // Pour 'callWebhook'

@@ -1,7 +1,7 @@
 // chemin: vscript_call/src/components/PreviewPane/PreviewPane.tsx
 
 import React, { useState, useEffect } from 'react';
-import { Component, Script } from '../../types';
+import { Component, Script, WorkflowRule } from '../../types';
 import { getDeviceWidth } from '../../utils/helpers';
 
 interface PreviewPaneProps {
@@ -17,11 +17,16 @@ export const PreviewPane: React.FC<PreviewPaneProps> = ({
   device,
   onNavigateToPage,
 }) => {
+  // État pour les variables globales du script
   const [variables, setVariables] = useState<Record<string, any>>({});
+  // État pour les valeurs des composants de la page actuelle (ex: champs de saisie)
+  const [componentValues, setComponentValues] = useState<Record<string, any>>({});
   
   const currentPage = script.pages.find(p => p.id === currentPageId);
   const components = script.components.filter(c => c.pageId === currentPageId);
+  const workflowRules = script.workflowRules.filter(r => r.pageId === currentPageId);
 
+  // Initialisation des variables globales à partir du script
   useEffect(() => {
     const initialVariables: Record<string, any> = {};
     script.globalVariables.forEach(variable => {
@@ -30,6 +35,64 @@ export const PreviewPane: React.FC<PreviewPaneProps> = ({
     setVariables(initialVariables);
   }, [script.globalVariables]);
 
+  /**
+   * Moteur d'exécution des workflows.
+   * @param triggerType - Le type d'événement (ex: 'onClick', 'onChange').
+   * @param componentId - L'ID du composant qui a déclenché l'événement.
+   */
+  const executeWorkflow = (triggerType: WorkflowRule['trigger']['type'], componentId: string) => {
+    const applicableRules = workflowRules.filter(rule => 
+      rule.trigger.type === triggerType && rule.trigger.componentId === componentId
+    );
+
+    for (const rule of applicableRules) {
+      // TODO: Implémenter la vérification des conditions ici
+
+      // Exécuter chaque action de la règle
+      for (const action of rule.actions) {
+        switch (action.type) {
+          case 'navigate':
+            if (action.config.pageId) {
+              onNavigateToPage(action.config.pageId);
+            }
+            break;
+
+          case 'setVariable':
+            const variableToUpdate = script.globalVariables.find(v => v.id === action.config.variableId);
+            if (variableToUpdate) {
+              let newValue = action.config.value;
+
+              // Si la valeur doit provenir d'un autre composant
+              if (action.config.valueFrom) {
+                newValue = componentValues[action.config.valueFrom.componentId] || '';
+              }
+
+              setVariables(prev => ({
+                ...prev,
+                [variableToUpdate.name]: newValue,
+              }));
+            }
+            break;
+            
+          case 'showMessage':
+            alert(action.config.message);
+            break;
+        }
+      }
+    }
+  };
+
+  /**
+   * Gère le changement de valeur d'un composant de saisie.
+   * @param componentId - L'ID du composant.
+   * @param value - La nouvelle valeur.
+   */
+  const handleComponentValueChange = (componentId: string, value: any) => {
+    setComponentValues(prev => ({...prev, [componentId]: value}));
+    executeWorkflow('onChange', componentId);
+  }
+
+  // Rendu d'un composant individuel en mode prévisualisation
   const renderPreviewComponent = (component: Component) => {
     const style = {
       ...component.config.style,
@@ -38,22 +101,34 @@ export const PreviewPane: React.FC<PreviewPaneProps> = ({
       display: 'flex',
       alignItems: 'center',
       justifyContent: component.config.style?.textAlign === 'center' ? 'center' : 'flex-start',
-    };
-
-    const handleClick = () => {
-      if (component.type === 'button' && component.config.targetPageId) {
-        onNavigateToPage(component.config.targetPageId);
-      }
-      // Logique d'exécution de workflow à ajouter ici
+      cursor: 'pointer',
     };
 
     switch (component.type) {
       case 'text':
         return <div style={style}>{component.config.text}</div>;
+
       case 'button':
-        return <button style={style} onClick={handleClick}>{component.config.text}</button>;
+        return (
+          <button 
+            style={style} 
+            onClick={() => executeWorkflow('onClick', component.id)}
+          >
+            {component.config.text}
+          </button>
+        );
+
       case 'input':
-        return <input type="text" placeholder={component.config.placeholder} style={style} />;
+        return (
+          <input
+            type="text"
+            placeholder={component.config.placeholder}
+            style={style}
+            value={componentValues[component.id] || ''}
+            onChange={(e) => handleComponentValueChange(component.id, e.target.value)}
+          />
+        );
+
       default:
         return <div style={style}>Preview: {component.type}</div>;
     }
@@ -69,9 +144,6 @@ export const PreviewPane: React.FC<PreviewPaneProps> = ({
           width: canvasWidth,
           minHeight: '600px',
           backgroundColor: currentPage?.backgroundColor || '#ffffff',
-          backgroundImage: currentPage?.backgroundImage ? `url(${currentPage.backgroundImage})` : 'none',
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
         }}
       >
         {components.map(component => (
@@ -91,12 +163,12 @@ export const PreviewPane: React.FC<PreviewPaneProps> = ({
 
         {/* Panneau de débogage des variables */}
         {Object.keys(variables).length > 0 && (
-          <div className="absolute bottom-4 right-4 bg-slate-800 bg-opacity-80 text-white p-3 rounded-lg text-xs backdrop-blur-sm">
-            <div className="font-semibold mb-2 text-blue-300">Variables</div>
+          <div className="absolute bottom-4 right-4 bg-slate-800 bg-opacity-80 text-white p-3 rounded-lg text-xs backdrop-blur-sm shadow-xl">
+            <div className="font-semibold mb-2 text-blue-300 border-b border-slate-600 pb-1">Variables en direct</div>
             {Object.entries(variables).map(([key, value]) => (
-              <div key={key} className="flex justify-between">
-                <span>{key}:</span>
-                <span className="ml-2 text-emerald-300">{JSON.stringify(value)}</span>
+              <div key={key} className="flex justify-between mt-1">
+                <span className="text-slate-400">{key}:</span>
+                <span className="ml-4 font-mono text-emerald-300">{JSON.stringify(value)}</span>
               </div>
             ))}
           </div>
