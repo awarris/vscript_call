@@ -1,13 +1,13 @@
 // chemin: vscript_call/src/components/panels/PageManager.tsx
 
 import React, { useState } from 'react';
-import { Plus, Home, Edit3, Trash2, MoreVertical } from 'lucide-react';
+import { Plus, Home, Edit3, Trash2 } from 'lucide-react';
 import { Script, ScriptPage } from '../../types';
 import { generateId } from '../../utils/helpers';
 
 interface PageManagerProps {
   script: Script;
-  setScript: React.Dispatch<React.SetStateAction<Script>>; // Fonction pour mettre à jour tout le script
+  setScript: React.Dispatch<React.SetStateAction<Script>>;
   currentPageId: string;
   setCurrentPageId: (pageId: string) => void;
 }
@@ -43,29 +43,29 @@ export const PageManager: React.FC<PageManagerProps> = ({
       alert("Vous ne pouvez pas supprimer la dernière page.");
       return;
     }
-    
+
     // Logique complexe de suppression pour s'assurer qu'il reste une page d'accueil
     // et que la page courante est valide.
     setScript(prev => {
-        let newPages = prev.pages.filter(p => p.id !== pageId);
-        const pageRemoved = prev.pages.find(p => p.id === pageId);
+      let newPages = prev.pages.filter(p => p.id !== pageId);
+      const pageRemoved = prev.pages.find(p => p.id === pageId);
 
-        // Si on a supprimé la page d'accueil, on en définit une nouvelle
-        if (pageRemoved?.isHomePage && newPages.length > 0) {
-            newPages[0].isHomePage = true;
-        }
+      // Si on a supprimé la page d'accueil, on en définit une nouvelle
+      if (pageRemoved?.isHomePage && newPages.length > 0) {
+        newPages[0].isHomePage = true;
+      }
 
-        // Si on a supprimé la page courante, on navigue vers la nouvelle page d'accueil
-        if (currentPageId === pageId) {
-            setCurrentPageId(newPages[0]?.id || '');
-        }
+      // Si on a supprimé la page courante, on navigue vers la nouvelle page d'accueil
+      if (currentPageId === pageId) {
+        setCurrentPageId(newPages[0]?.id || '');
+      }
 
-        return {
-            ...prev,
-            pages: newPages,
-            // Supprimer aussi les composants associés à cette page
-            components: prev.components.filter(c => c.pageId !== pageId),
-        };
+      return {
+        ...prev,
+        pages: newPages,
+        // Supprimer aussi les composants associés à cette page
+        components: prev.components.filter(c => c.pageId !== pageId),
+      };
     });
   };
 
@@ -81,11 +81,11 @@ export const PageManager: React.FC<PageManagerProps> = ({
 
   const handleSetHomePage = (pageId: string) => {
     setScript(prev => ({
-        ...prev,
-        pages: prev.pages.map(p => ({
-            ...p,
-            isHomePage: p.id === pageId
-        }))
+      ...prev,
+      pages: prev.pages.map(p => ({
+        ...p,
+        isHomePage: p.id === pageId
+      }))
     }));
   };
 
@@ -104,11 +104,10 @@ export const PageManager: React.FC<PageManagerProps> = ({
           <div
             key={page.id}
             onClick={() => setCurrentPageId(page.id)}
-            className={`p-3 border rounded-lg cursor-pointer transition-all ${
-              currentPageId === page.id
+            className={`p-3 border rounded-lg cursor-pointer transition-all ${currentPageId === page.id
                 ? 'bg-blue-50 border-blue-500'
                 : 'bg-white border-slate-200 hover:border-slate-300'
-            }`}
+              }`}
           >
             <div className="flex items-center justify-between">
               {editingPageId === page.id ? (
@@ -129,12 +128,12 @@ export const PageManager: React.FC<PageManagerProps> = ({
               )}
 
               <div className="flex items-center space-x-1">
-                  <button onClick={(e) => {
-                      e.stopPropagation();
-                      setEditingPageId(page.id);
-                      setEditingName(page.name);
-                  }} className="p-1 hover:bg-slate-200 rounded-full"><Edit3 size={14}/></button>
-                  <button onClick={(e) => { e.stopPropagation(); handleRemovePage(page.id);}} className="p-1 hover:bg-red-100 rounded-full text-red-500"><Trash2 size={14}/></button>
+                <button onClick={(e) => {
+                  e.stopPropagation();
+                  setEditingPageId(page.id);
+                  setEditingName(page.name);
+                }} className="p-1 hover:bg-slate-200 rounded-full"><Edit3 size={14} /></button>
+                <button onClick={(e) => { e.stopPropagation(); handleRemovePage(page.id); }} className="p-1 hover:bg-red-100 rounded-full text-red-500"><Trash2 size={14} /></button>
               </div>
             </div>
           </div>
