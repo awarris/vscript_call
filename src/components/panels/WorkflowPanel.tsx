@@ -1,52 +1,205 @@
 // chemin: vscript_call/src/components/panels/WorkflowPanel.tsx
 
-import React from 'react';
-import { Plus, Play, Settings, Trash2, Zap } from 'lucide-react';
-import { Script, WorkflowRule } from '../../types';
+import React, { useState } from 'react';
+import { Plus, Trash2, Zap, Settings, ArrowLeft } from 'lucide-react';
+import { Script, WorkflowRule, WorkflowTriggerType, WorkflowAction, Component, ScriptPage } from '../../types';
 import { generateId } from '../../utils/helpers';
 
-// Définition correcte des props attendues par le composant
+// Props du composant principal
 interface WorkflowPanelProps {
   script: Script;
   setScript: React.Dispatch<React.SetStateAction<Script>>;
   currentPageId: string;
 }
 
-export const WorkflowPanel: React.FC<WorkflowPanelProps> = ({ script, setScript, currentPageId }) => {
-  // On filtre les workflows pour n'afficher que ceux de la page courante
-  const currentWorkflowRules = script.workflowRules.filter(rule => rule.pageId === currentPageId);
+// Props de l'éditeur de workflow
+interface WorkflowEditorProps {
+  rule: WorkflowRule;
+  onSave: (updatedRule: WorkflowRule) => void;
+  onCancel: () => void;
+  onDelete: (ruleId: string) => void;
+  componentsOnPage: Component[];
+  pages: ScriptPage[];
+}
 
-  /**
-   * Ajoute un nouveau workflow vide à la page actuelle.
-   */
+const availableTriggers: { type: WorkflowTriggerType; label: string }[] = [
+  { type: 'onClick', label: 'Au clic' },
+  { type: 'onDoubleClick', label: 'Au double-clic' },
+  { type: 'onMouseEnter', label: 'Souris entre' },
+  { type: 'onMouseLeave', label: 'Souris sort' },
+  { type: 'onChange', label: 'Au changement' },
+  { type: 'onPageLoad', label: 'Chargement de la page' },
+];
+
+const availableActions = [
+  { type: 'navigate', label: 'Naviguer vers...' },
+  { type: 'showMessage', label: 'Afficher un message' },
+  // Ajoutez d'autres types d'actions ici
+];
+
+// L'éditeur de workflow
+const WorkflowEditor: React.FC<WorkflowEditorProps> = ({ rule, onSave, onCancel, onDelete, componentsOnPage, pages }) => {
+  const [currentRule, setCurrentRule] = useState(rule);
+
+  const handleTriggerChange = (field: keyof WorkflowRule['trigger'], value: any) => {
+    setCurrentRule(prev => ({ ...prev, trigger: { ...prev.trigger, [field]: value } }));
+  };
+  
+  const handleActionChange = (index: number, field: keyof WorkflowAction['config'], value: any) => {
+    const newActions = [...currentRule.actions];
+    newActions[index].config = { ...newActions[index].config, [field]: value };
+    setCurrentRule(prev => ({...prev, actions: newActions}));
+  }
+  
+  const handleAddAction = () => {
+    const newAction: WorkflowAction = {
+        id: generateId(),
+        type: 'navigate',
+        config: {}
+    };
+    setCurrentRule(prev => ({...prev, actions: [...prev.actions, newAction]}));
+  }
+
+  const handleRemoveAction = (index: number) => {
+    setCurrentRule(prev => ({...prev, actions: prev.actions.filter((_, i) => i !== index)}));
+  }
+
+  const handleActionTypeChange = (index: number, newType: 'navigate' | 'showMessage') => {
+    const newActions = [...currentRule.actions];
+    newActions[index] = { ...newActions[index], type: newType, config: {} }; // Réinitialise la config
+    setCurrentRule(prev => ({...prev, actions: newActions}));
+  }
+
+  return (
+    <div className="space-y-4">
+      <button onClick={onCancel} className="flex items-center space-x-2 text-sm text-slate-600 hover:text-slate-900">
+        <ArrowLeft size={16} />
+        <span>Retour à la liste</span>
+      </button>
+
+      {/* Nom du workflow */}
+      <div>
+        <label className="text-sm font-semibold">Nom du workflow</label>
+        <input
+          type="text"
+          value={currentRule.name}
+          onChange={(e) => setCurrentRule(prev => ({ ...prev, name: e.target.value }))}
+          className="w-full mt-1 px-3 py-2 text-sm border border-slate-300 rounded-lg"
+        />
+      </div>
+
+      {/* Déclencheur */}
+      <div className="p-3 bg-slate-50 border rounded-lg space-y-2">
+        <h3 className="font-semibold text-slate-800">Quand... (Déclencheur)</h3>
+        <select
+          value={currentRule.trigger.type}
+          onChange={(e) => handleTriggerChange('type', e.target.value)}
+          className="w-full px-2 py-1.5 text-sm border bg-white border-slate-300 rounded-md"
+        >
+          {availableTriggers.map(t => <option key={t.type} value={t.type}>{t.label}</option>)}
+        </select>
+        {currentRule.trigger.type !== 'onPageLoad' && (
+          <select
+            value={currentRule.trigger.componentId || ''}
+            onChange={(e) => handleTriggerChange('componentId', e.target.value)}
+            className="w-full px-2 py-1.5 text-sm border bg-white border-slate-300 rounded-md"
+          >
+            <option value="">Sélectionner un composant</option>
+            {componentsOnPage.map(c => <option key={c.id} value={c.id}>{c.type} ({c.id.slice(-4)})</option>)}
+          </select>
+        )}
+      </div>
+
+      {/* Actions */}
+      <div className="p-3 bg-slate-50 border rounded-lg space-y-3">
+        <h3 className="font-semibold text-slate-800">Alors... (Actions)</h3>
+        {currentRule.actions.map((action, index) => (
+          <div key={action.id} className="p-2 border-t space-y-2">
+            <div className="flex items-center justify-between">
+                <select value={action.type} onChange={(e) => handleActionTypeChange(index, e.target.value as any)} className="w-full px-2 py-1.5 text-sm border bg-white border-slate-300 rounded-md">
+                   {availableActions.map(a => <option key={a.type} value={a.type}>{a.label}</option>)}
+                </select>
+                <button onClick={() => handleRemoveAction(index)} className="p-1 text-red-500 hover:bg-red-100 rounded ml-2"><Trash2 size={14} /></button>
+            </div>
+            {action.type === 'navigate' && (
+                <select value={action.config.pageId || ''} onChange={(e) => handleActionChange(index, 'pageId', e.target.value)} className="w-full px-2 py-1.5 text-sm border bg-white border-slate-300 rounded-md">
+                    <option value="">Choisir une page</option>
+                    {pages.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                </select>
+            )}
+            {action.type === 'showMessage' && (
+                <input type="text" placeholder="Votre message..." value={action.config.message || ''} onChange={(e) => handleActionChange(index, 'message', e.target.value)} className="w-full mt-1 px-3 py-2 text-sm border border-slate-300 rounded-lg"/>
+            )}
+          </div>
+        ))}
+         <button onClick={handleAddAction} className="w-full mt-2 text-sm text-blue-600 hover:text-blue-800">
+            + Ajouter une action
+        </button>
+      </div>
+
+      {/* Boutons de sauvegarde */}
+      <div className="flex items-center space-x-2">
+        <button onClick={() => onSave(currentRule)} className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+          Enregistrer
+        </button>
+        <button onClick={() => onDelete(rule.id)} className="p-2 text-red-500 hover:bg-red-100 rounded-lg">
+          <Trash2 size={18} />
+        </button>
+      </div>
+    </div>
+  );
+};
+
+// Le composant principal qui affiche la liste ou l'éditeur
+export const WorkflowPanel: React.FC<WorkflowPanelProps> = ({ script, setScript, currentPageId }) => {
+  const [editingRule, setEditingRule] = useState<WorkflowRule | null>(null);
+
+  const componentsOnPage = script.components.filter(c => c.pageId === currentPageId);
+  const workflowsOnPage = script.workflowRules.filter(rule => rule.pageId === currentPageId);
+
   const handleAddWorkflow = () => {
     const newWorkflow: WorkflowRule = {
       id: generateId(),
-      name: `Nouveau Workflow ${currentWorkflowRules.length + 1}`,
+      name: `Nouveau Workflow ${workflowsOnPage.length + 1}`,
       pageId: currentPageId,
-      trigger: {
-        type: 'onClick', // Déclencheur par défaut
-      },
+      trigger: { type: 'onClick' },
       conditions: [],
       actions: [],
     };
-
-    setScript(prevScript => ({
-      ...prevScript,
-      workflowRules: [...prevScript.workflowRules, newWorkflow],
-    }));
+    setEditingRule(newWorkflow);
   };
 
-  /**
-   * Supprime un workflow par son ID.
-   * @param ruleId - L'ID du workflow à supprimer.
-   */
-  const handleRemoveWorkflow = (ruleId: string) => {
-    setScript(prevScript => ({
-      ...prevScript,
-      workflowRules: prevScript.workflowRules.filter(rule => rule.id !== ruleId),
+  const handleSaveWorkflow = (updatedRule: WorkflowRule) => {
+    const isNew = !script.workflowRules.some(r => r.id === updatedRule.id);
+    setScript(prev => ({
+      ...prev,
+      workflowRules: isNew
+        ? [...prev.workflowRules, updatedRule]
+        : prev.workflowRules.map(r => r.id === updatedRule.id ? updatedRule : r),
     }));
+    setEditingRule(null);
   };
+
+  const handleDeleteWorkflow = (ruleId: string) => {
+    setScript(prev => ({
+      ...prev,
+      workflowRules: prev.workflowRules.filter(r => r.id !== ruleId),
+    }));
+    setEditingRule(null);
+  };
+
+  if (editingRule) {
+    return (
+      <WorkflowEditor
+        rule={editingRule}
+        onSave={handleSaveWorkflow}
+        onCancel={() => setEditingRule(null)}
+        onDelete={handleDeleteWorkflow}
+        componentsOnPage={componentsOnPage}
+        pages={script.pages}
+      />
+    );
+  }
 
   return (
     <div className="space-y-4">
@@ -59,20 +212,13 @@ export const WorkflowPanel: React.FC<WorkflowPanelProps> = ({ script, setScript,
       </button>
 
       <div className="space-y-2">
-        {currentWorkflowRules.map(rule => (
+        {workflowsOnPage.map(rule => (
           <div key={rule.id} className="p-3 bg-white border border-slate-200 rounded-lg">
             <div className="flex items-center justify-between mb-2">
               <h5 className="text-sm font-medium text-slate-900">{rule.name}</h5>
               <div className="flex space-x-1">
-                <button className="p-1 text-slate-400 hover:text-blue-600 rounded" title="Modifier">
+                <button onClick={() => setEditingRule(rule)} className="p-1 text-slate-400 hover:text-blue-600 rounded" title="Modifier">
                   <Settings size={14} />
-                </button>
-                <button 
-                  className="p-1 text-slate-400 hover:text-red-600 rounded" 
-                  title="Supprimer"
-                  onClick={() => handleRemoveWorkflow(rule.id)}
-                >
-                  <Trash2 size={14} />
                 </button>
               </div>
             </div>
@@ -83,7 +229,7 @@ export const WorkflowPanel: React.FC<WorkflowPanelProps> = ({ script, setScript,
         ))}
       </div>
 
-      {currentWorkflowRules.length === 0 && (
+      {workflowsOnPage.length === 0 && (
         <div className="text-center py-8 text-slate-400">
           <Zap className="h-10 w-10 mx-auto mb-2 opacity-30" />
           <p className="text-sm font-medium">Aucun workflow pour cette page</p>
