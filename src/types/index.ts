@@ -69,7 +69,7 @@ export interface WorkflowCondition {
   value: any;
 }
 
-export type WorkflowActionType = 'navigate' | 'setVariable' | 'showMessage' | 'executeCode';
+export type WorkflowActionType = 'navigate' | 'setVariable' | 'showMessage' | 'executeCode' | 'setVisibility';
 
 export interface WorkflowAction {
   id: string;
@@ -84,6 +84,8 @@ export interface WorkflowAction {
     };
     message?: string;
     code?: string;
+    targetComponentId?: string; // Pour setVisibility
+    visible?: boolean;         // Pour setVisibility
   };
 }
 
@@ -154,4 +156,3 @@ export interface HistoryState<T> {
   present: T;
   future: T[];
 }
-

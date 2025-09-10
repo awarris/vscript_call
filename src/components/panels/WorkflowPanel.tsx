@@ -1,4 +1,4 @@
-// chemin: vscript_call/src/components/panels/WorkflowPanel.tsx
+// chemin: src/components/panels/WorkflowPanel.tsx
 
 import React, { useState, useMemo } from 'react';
 import Editor from 'react-simple-code-editor';
@@ -56,6 +56,7 @@ const availableActions: { type: WorkflowActionType; label: string }[] = [
   { type: 'navigate', label: 'Naviguer vers...' },
   { type: 'showMessage', label: 'Afficher un message' },
   { type: 'executeCode', label: 'Exécuter du code' },
+  { type: 'setVisibility', label: 'Afficher/Masquer un élément' },
 ];
 
 // L'éditeur de workflow
@@ -201,6 +202,27 @@ const WorkflowEditor: React.FC<WorkflowEditorProps> = ({ rule, onSave, onCancel,
                   }}
                 />
               </div>
+            )}
+            {action.type === 'setVisibility' && (
+                <div className="space-y-2">
+                    <select 
+                        value={action.config.targetComponentId || ''} 
+                        onChange={(e) => handleActionChange(index, 'targetComponentId', e.target.value)} 
+                        className="w-full px-2 py-1.5 text-sm border bg-white border-slate-300 rounded-md"
+                    >
+                        <option value="">Choisir un élément</option>
+                        {componentsOnPage.map(c => <option key={c.id} value={c.id}>{c.type} ({c.id.slice(-4)})</option>)}
+                    </select>
+                    <select 
+                        value={action.config.visible === undefined ? '' : String(action.config.visible)} 
+                        onChange={(e) => handleActionChange(index, 'visible', e.target.value === 'true')} 
+                        className="w-full px-2 py-1.5 text-sm border bg-white border-slate-300 rounded-md"
+                    >
+                        <option value="" disabled>Choisir une action</option>
+                        <option value="true">Afficher</option>
+                        <option value="false">Masquer</option>
+                    </select>
+                </div>
             )}
           </div>
         ))}

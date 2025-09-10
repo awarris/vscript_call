@@ -148,28 +148,10 @@ export const PreviewPane: React.FC<PreviewPaneProps> = ({
   useEffect(() => {
     // Initialise la visibilité des composants en fonction de leur configuration
     const initialVisibility: Record<string, boolean> = {};
-    const localComponentValues: Record<string, any> = {};
-
     components.forEach(c => {
         initialVisibility[c.id] = c.config.visible !== false;
-        if (c.type === 'visibilityCheckbox' || c.type === 'checkbox') {
-            localComponentValues[c.id] = c.config.checked || false;
-        }
     });
-    
-    // Met à jour la visibilité en fonction des checkbox de contrôle
-    const visibilityCheckboxControllers = components.filter(c => c.type === 'visibilityCheckbox' && c.config.targetComponentId);
-    visibilityCheckboxControllers.forEach(controller => {
-        const isChecked = localComponentValues[controller.id];
-        const targetId = controller.config.targetComponentId;
-        if(targetId && initialVisibility[targetId] !== isChecked) {
-            initialVisibility[targetId] = isChecked;
-        }
-    });
-
     setComponentVisibility(initialVisibility);
-    setComponentValues(prev => ({...prev, ...localComponentValues}));
-
   }, [currentPageId, script.components]);
 
   useEffect(() => {
@@ -181,6 +163,7 @@ export const PreviewPane: React.FC<PreviewPaneProps> = ({
   }, [script.globalVariables]);
 
   useEffect(() => { 
+    setComponentValues({}); 
     setEditingDateTimeId(null);
     executeWorkflow('onPageLoad', 'page');
 }, [currentPageId]);
@@ -197,8 +180,13 @@ const executeWorkflow = (triggerType: WorkflowTriggerType, componentId: string) 
           case 'navigate':
             if (action.config.pageId) onNavigateToPage(action.config.pageId);
             break;
-          case 'setVariable':
-            // ... (logique existante)
+          case 'setVisibility':
+            if (action.config.targetComponentId !== undefined && action.config.visible !== undefined) {
+                setComponentVisibility(prev => ({
+                    ...prev,
+                    [action.config.targetComponentId!]: action.config.visible!,
+                }));
+            }
             break;
           case 'showMessage':
             alert(action.config.message);
@@ -206,7 +194,6 @@ const executeWorkflow = (triggerType: WorkflowTriggerType, componentId: string) 
           case 'executeCode':
             if (action.config.code) {
               try {
-                // Création d'un contexte sécurisé pour l'exécution du code
                 const getVariable = (name: string) => variables[name];
                 const setVariable = (name: string, value: any) => {
                     const variableExists = script.globalVariables.some(v => v.name === name);
@@ -217,11 +204,13 @@ const executeWorkflow = (triggerType: WorkflowTriggerType, componentId: string) 
                     }
                 };
                 const getComponentValue = (id: string) => componentValues[id];
+                const setComponentVisibility = (id: string, visible: boolean) => {
+                    setComponentVisibility(prev => ({...prev, [id]: visible}));
+                }
                 const navigate = (pageId: string) => onNavigateToPage(pageId);
 
-                // Exécution du code via le constructeur Function
-                const func = new Function('getVariable', 'setVariable', 'getComponentValue', 'navigate', action.config.code);
-                func(getVariable, setVariable, getComponentValue, navigate);
+                const func = new Function('getVariable', 'setVariable', 'getComponentValue', 'navigate', 'setComponentVisibility', action.config.code);
+                func(getVariable, setVariable, getComponentValue, navigate, setComponentVisibility);
 
               } catch (error) {
                 console.error("Erreur lors de l'exécution du code utilisateur:", error);
@@ -237,14 +226,6 @@ const executeWorkflow = (triggerType: WorkflowTriggerType, componentId: string) 
   const handleComponentValueChange = (componentId: string, value: any) => {
     setComponentValues(prev => ({...prev, [componentId]: value}));
   
-    const component = components.find(c => c.id === componentId);
-
-    // Logique spécifique pour le checkbox de visibilité
-    if (component?.type === 'visibilityCheckbox' && component.config.targetComponentId) {
-        const targetId = component.config.targetComponentId;
-        setComponentVisibility(prev => ({...prev, [targetId]: value}));
-    }
-
     const linkedVariable = script.globalVariables.find(v => v.componentId === componentId);
     if (linkedVariable) {
       setVariables(prev => ({...prev, [linkedVariable.name]: value}));
@@ -313,7 +294,6 @@ const executeWorkflow = (triggerType: WorkflowTriggerType, componentId: string) 
                 </select>
             );
         case 'checkbox':
-        case 'visibilityCheckbox':
             return <div style={{...style, display: 'flex', alignItems: 'center'}}><input type="checkbox" checked={componentValues[component.id] || false} onChange={(e) => handleComponentValueChange(component.id, e.target.checked)} {...eventHandlers} /> <span style={{ marginLeft: '8px' }}>{component.config.label}</span></div>;
         case 'calculator':
             return <FunctionalCalculator styleConfig={component.config.style as ComponentStyle} />;
@@ -330,17 +310,19 @@ const executeWorkflow = (triggerType: WorkflowTriggerType, componentId: string) 
         className="bg-white rounded-xl shadow-2xl border border-slate-300 relative overflow-hidden"
         style={{ width: getDeviceWidth(device), minHeight: '800px', backgroundColor: currentPage?.backgroundColor || '#ffffff' }}
       >
-        {components.filter(c => componentVisibility[c.id]).map(component => (
-          <div key={component.id} style={{ position: 'absolute', left: component.position.x, top: component.position.y, width: component.size.width, height: 'auto' }}>
-            {component.config.label && (
-                <label style={{...component.config.labelStyle, display: 'block', marginBottom: '4px'}}>
-                    {component.config.label}
-                </label>
-            )}
-            <div style={{height: component.size.height}}>
-              {renderPreviewComponent(component)}
+        {components
+          .filter(c => componentVisibility[c.id]) // Filtre les composants non visibles
+          .map(component => (
+            <div key={component.id} style={{ position: 'absolute', left: component.position.x, top: component.position.y, width: component.size.width, height: 'auto' }}>
+              {component.config.label && (
+                  <label style={{...component.config.labelStyle, display: 'block', marginBottom: '4px'}}>
+                      {component.config.label}
+                  </label>
+              )}
+              <div style={{height: component.size.height}}>
+                {renderPreviewComponent(component)}
+              </div>
             </div>
-          </div>
         ))}
 
         <div className="absolute bottom-0 left-0 right-0 bg-slate-800 text-white p-2 flex items-center justify-between text-xs">
@@ -366,3 +348,4 @@ const executeWorkflow = (triggerType: WorkflowTriggerType, componentId: string) 
     </div>
   );
 };
+
