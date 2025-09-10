@@ -71,6 +71,7 @@ export const ScriptEditor: React.FC = () => {
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [isRightPanelOpen, setIsRightPanelOpen] = useState(true);
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
 
   // NOUVEL ÉTAT pour le zoom et le panoramique
   const [viewState, setViewState] = useState<ViewState>({ scale: 1, x: 0, y: 0 });
@@ -100,6 +101,17 @@ export const ScriptEditor: React.FC = () => {
 
   const handleUpdateScript = (updates: Partial<Script>) => {
     setScript(prev => prev ? { ...prev, ...updates } : null);
+  };
+
+  const handleSaveScript = () => {
+    if (script && scriptId) {
+      setSaveStatus('saving');
+      updateScript(scriptId, script);
+      setTimeout(() => {
+        setSaveStatus('saved');
+        setTimeout(() => setSaveStatus('idle'), 2000);
+      }, 500);
+    }
   };
 
   const currentPage = script?.pages.find(p => p.id === currentPageId);
@@ -208,6 +220,7 @@ export const ScriptEditor: React.FC = () => {
           script={script}
           onUpdateScript={handleUpdateScript}
           onImportScript={handleImportScript}
+          onSaveScript={handleSaveScript}
           isPreviewMode={isPreviewMode}
           onTogglePreview={() => setIsPreviewMode(!isPreviewMode)}
           undo={undo}
@@ -225,6 +238,13 @@ export const ScriptEditor: React.FC = () => {
         />
         <div className="flex-1 relative overflow-hidden">
           <ChatPanel isOpen={isChatOpen} onClose={() => setIsChatOpen(false)} script={script} />
+
+           {/* Notification de sauvegarde */}
+           {saveStatus !== 'idle' && (
+              <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-green-500 text-white px-4 py-2 rounded-lg shadow-lg z-50 transition-opacity duration-300">
+                {saveStatus === 'saving' ? 'Sauvegarde...' : 'Script sauvegardé !'}
+              </div>
+            )}
           
           <div className="h-full flex flex-col overflow-hidden">
             {isPreviewMode ? (

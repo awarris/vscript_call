@@ -3,7 +3,7 @@
 import React from 'react';
 import { 
   Eye, Upload, Download, Undo, Redo, Play, PanelRight,
-  MessageSquare, Moon, Sun, ZoomIn, ZoomOut, RefreshCw
+  MessageSquare, Moon, Sun, ZoomIn, ZoomOut, RefreshCw, Save
 } from 'lucide-react';
 import { Script } from '../../types';
 import { exportScriptToJSON, importScriptFromJSON } from '../../utils/helpers';
@@ -13,6 +13,7 @@ interface ToolbarProps {
   script: Script;
   onUpdateScript: (updates: Partial<Script>) => void;
   onImportScript: (script: Script) => void;
+  onSaveScript: () => void; // Ajout de la nouvelle prop
   isPreviewMode: boolean;
   onTogglePreview: () => void;
   undo: () => void;
@@ -34,6 +35,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({
   script,
   onUpdateScript,
   onImportScript,
+  onSaveScript, // Utilisation de la nouvelle prop
   isPreviewMode,
   onTogglePreview,
   undo,
@@ -134,6 +136,17 @@ export const Toolbar: React.FC<ToolbarProps> = ({
         >
           {theme === 'light' ? <Moon size={18} /> : <Sun size={18} />}
         </button>
+
+        {/* --- BOUTON SAUVEGARDER AJOUTÉ ICI --- */}
+        <button
+          onClick={onSaveScript}
+          className="p-2 bg-gray-vs-100 text-gray-vs-600 dark:text-gray-vs-300 rounded-lg hover:bg-gray-vs-100 dark:hover:bg-gray-vs-700 flex items-center space-x-2"
+          title="Sauvegarder le script"
+        >
+          <Save size={18} />
+          <span>Sauvegarder</span>
+        </button>
+
         <div className="h-6 w-px bg-gray-vs-200 dark:bg-gray-vs-600"></div>
         <button
           onClick={onTogglePreview}
