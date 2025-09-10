@@ -3,7 +3,6 @@
 import React from 'react';
 import { 
   Eye, 
-  EyeOff, 
   Smartphone, 
   Tablet, 
   Monitor, 
@@ -12,7 +11,10 @@ import {
   Download,
   Undo, 
   Redo,
-  Play
+  Play,
+  PanelLeft,
+  PanelRight,
+  MessageSquare
 } from 'lucide-react';
 import { Script } from '../../types';
 import { exportScriptToJSON, importScriptFromJSON } from '../../utils/helpers';
@@ -29,6 +31,8 @@ interface ToolbarProps {
   redo: () => void;
   canUndo: boolean;
   canRedo: boolean;
+  onToggleChat: () => void;
+  onToggleRightPanels: () => void;
 }
 
 export const Toolbar: React.FC<ToolbarProps> = ({
@@ -43,6 +47,8 @@ export const Toolbar: React.FC<ToolbarProps> = ({
   redo,
   canUndo,
   canRedo,
+  onToggleChat,
+  onToggleRightPanels
 }) => {
 
   const deviceButtons = [
@@ -68,93 +74,86 @@ export const Toolbar: React.FC<ToolbarProps> = ({
   };
 
   return (
-    <div className="bg-white border-b border-slate-200 px-4 py-2 flex items-center justify-between shadow-sm flex-shrink-0">
-      {/* Section Gauche: Nom du script et Actions sur l'historique */}
-      <div className="flex items-center space-x-4">
+    <div className="bg-white border-b border-gray-vs-200 px-4 py-2 flex items-center justify-between shadow-sm flex-shrink-0 z-20">
+      {/* Section Gauche */}
+      <div className="flex items-center space-x-2">
+        <button
+            onClick={onToggleChat}
+            className="p-2 text-gray-vs-600 rounded-lg hover:bg-gray-vs-100"
+            title="Afficher l'assistant IA"
+          >
+            <MessageSquare size={18} />
+        </button>
+        <div className="h-6 w-px bg-gray-vs-200"></div>
         <input
           type="text"
           value={script.name}
           onChange={(e) => onUpdateScript({ name: e.target.value })}
-          className="text-md font-semibold text-slate-900 bg-transparent border-none outline-none focus:ring-2 focus:ring-blue-500 px-2 py-1 rounded-md"
+          className="text-md font-semibold text-gray-vs-900 bg-transparent border-none outline-none focus:ring-2 focus:ring-blue-vs-500 px-2 py-1 rounded-md"
         />
-        <div className="flex items-center space-x-1">
-          <button
-            onClick={undo}
-            disabled={!canUndo}
-            className="p-2 text-slate-600 rounded-md hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed"
-            title="Annuler (Ctrl+Z)"
-          >
-            <Undo size={18} />
-          </button>
-          <button
-            onClick={redo}
-            disabled={!canRedo}
-            className="p-2 text-slate-600 rounded-md hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed"
-            title="Rétablir (Ctrl+Y)"
-          >
-            <Redo size={18} />
-          </button>
+        <button
+          onClick={undo}
+          disabled={!canUndo}
+          className="p-2 text-gray-vs-600 rounded-md hover:bg-gray-vs-100 disabled:opacity-50 disabled:cursor-not-allowed"
+          title="Annuler (Ctrl+Z)"
+        >
+          <Undo size={18} />
+        </button>
+        <button
+          onClick={redo}
+          disabled={!canRedo}
+          className="p-2 text-gray-vs-600 rounded-md hover:bg-gray-vs-100 disabled:opacity-50 disabled:cursor-not-allowed"
+          title="Rétablir (Ctrl+Y)"
+        >
+          <Redo size={18} />
+        </button>
+      </div>
+
+      {/* Section Centrale */}
+      {!isPreviewMode && (
+        <div className="flex items-center bg-gray-vs-100 rounded-lg p-1">
+          {deviceButtons.map(({ key, icon: Icon, label }) => (
+            <button
+              key={key}
+              onClick={() => onDeviceChange(key)}
+              className={`p-2 rounded-md transition-all duration-200 ${
+                currentDevice === key
+                  ? 'bg-white shadow-sm text-blue-vs-600'
+                  : 'text-gray-vs-600 hover:text-gray-vs-900'
+              }`}
+              title={label}
+            >
+              <Icon size={18} />
+            </button>
+          ))}
         </div>
-      </div>
+      )}
 
-      {/* Section Centrale: Vues de l'appareil */}
-      <div className="flex items-center bg-slate-100 rounded-lg p-1">
-        {deviceButtons.map(({ key, icon: Icon, label }) => (
-          <button
-            key={key}
-            onClick={() => onDeviceChange(key)}
-            className={`p-2 rounded-md transition-all duration-200 ${
-              currentDevice === key
-                ? 'bg-white shadow-sm text-blue-600'
-                : 'text-slate-600 hover:text-slate-900'
-            }`}
-            title={label}
-          >
-            <Icon size={18} />
-          </button>
-        ))}
-      </div>
-
-      {/* Section Droite: Actions principales */}
+      {/* Section Droite */}
       <div className="flex items-center space-x-2">
-        <button
-          onClick={() => console.log("Sauvegarder")}
-          className="px-3 py-2 text-sm bg-slate-100 text-slate-700 rounded-lg font-medium hover:bg-slate-200 transition-colors flex items-center space-x-2"
-        >
-          <Save size={16} />
-          <span>Sauvegarder</span>
-        </button>
-
-        <button
-          onClick={() => exportScriptToJSON(script)}
-          className="p-2 text-slate-600 hover:bg-slate-100 rounded-lg"
-          title="Exporter le script"
-        >
-          <Download size={18} />
-        </button>
-
-        <label className="p-2 text-slate-600 hover:bg-slate-100 rounded-lg cursor-pointer" title="Importer un script">
-          <Upload size={18} />
-          <input type="file" accept=".json" onChange={handleImport} className="hidden" />
-        </label>
-        
-        <div className="h-6 w-px bg-slate-200 mx-2"></div>
-
         <button
           onClick={onTogglePreview}
           className={`px-3 py-2 text-sm rounded-lg font-medium transition-all duration-200 flex items-center space-x-2 ${
             isPreviewMode
-              ? 'bg-amber-100 text-amber-700 hover:bg-amber-200'
-              : 'bg-blue-100 text-blue-700 hover:bg-blue-200'
+              ? 'bg-amber-vs-200 text-amber-vs-700 hover:bg-amber-vs-300'
+              : 'bg-blue-vs-100 text-blue-vs-700 hover:bg-blue-vs-200'
           }`}
         >
-          {isPreviewMode ? <EyeOff size={16} /> : <Eye size={16} />}
+          <Eye size={16} />
           <span>{isPreviewMode ? 'Édition' : 'Aperçu'}</span>
         </button>
         
-        <button className="px-3 py-2 text-sm bg-emerald-600 text-white rounded-lg font-medium hover:bg-emerald-700 transition-colors flex items-center space-x-2">
+        <button className="px-3 py-2 text-sm bg-green-vs-600 text-white rounded-lg font-medium hover:bg-green-vs-700 transition-colors flex items-center space-x-2">
           <Play size={16} />
           <span>Publier</span>
+        </button>
+        <div className="h-6 w-px bg-gray-vs-200"></div>
+         <button
+            onClick={onToggleRightPanels}
+            className="p-2 text-gray-vs-600 rounded-lg hover:bg-gray-vs-100"
+            title="Afficher les panneaux"
+          >
+            <PanelRight size={18} />
         </button>
       </div>
     </div>

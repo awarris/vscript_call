@@ -4,6 +4,59 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Définition des variables de couleur globales */
+:root {
+  --color-green-vs-100: #D9F99D;
+  --color-green-vs-200: #B2F5B2;
+  --color-green-vs-300: #6EE7B7;
+  --color-green-vs-400: #34D399;
+  --color-green-vs-500: #10B981;
+  --color-green-vs-600: #059669;
+  --color-green-vs-700: #047857;
+  --color-green-vs-800: #065F46;
+  --color-green-vs-900: #064E3B;
+  
+  --color-amber-vs-100: #fff4c7;
+  --color-amber-vs-200: #ffe785;
+  --color-amber-vs-300: #ffd230;
+  --color-amber-vs-400: #ffbb00;
+  --color-amber-vs-500: #ff9900;
+  --color-amber-vs-600: #e07000;
+  --color-amber-vs-700: #ba4e00;
+  --color-amber-vs-800: #963c00;
+  --color-amber-vs-900: #7a3306;
+  
+  --color-red-vs-100: #FEE2E2;
+  --color-red-vs-200: #FCA5A5;
+  --color-red-vs-300: #F87171;
+  --color-red-vs-400: #EF4444;
+  --color-red-vs-500: #DC2626;
+  --color-red-vs-600: #B91C1C;
+  --color-red-vs-700: #991B1B;
+  --color-red-vs-800: #7F1D1D;
+  --color-red-vs-900: #641E1E;
+  
+  --color-blue-vs-100: #BFDBFE;
+  --color-blue-vs-200: #93C5FD;
+  --color-blue-vs-300: #60A5FA;
+  --color-blue-vs-400: #3B82F6;
+  --color-blue-vs-500: #2563EB;
+  --color-blue-vs-600: #1D4ED8;
+  --color-blue-vs-700: #1E40AF;
+  --color-blue-vs-800: #1E3A8A;
+  --color-blue-vs-900: #1E3A8A;
+  
+  --color-gray-vs-100: #F3F4F6;
+  --color-gray-vs-200: #E5E7EB;
+  --color-gray-vs-300: #D1D5DB;
+  --color-gray-vs-400: #9CA3AF;
+  --color-gray-vs-500: #6B7280;
+  --color-gray-vs-600: #4B5563;
+  --color-gray-vs-700: #374151;
+  --color-gray-vs-800: #1F2937;
+  --color-gray-vs-900: #111827;
+}
+
 /* Styles globaux pour une meilleure apparence */
 body {
   -webkit-font-smoothing: antialiased;
@@ -16,12 +69,12 @@ body {
   height: 8px;
 }
 ::-webkit-scrollbar-track {
-  background: #f1f5f9; /* slate-100 */
+  background: #f1f5f9; /* gray-vs-100 */
 }
 ::-webkit-scrollbar-thumb {
-  background: #cbd5e1; /* slate-300 */
+  background: #cbd5e1; /* gray-vs-300 */
   border-radius: 4px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8; /* slate-400 */
+  background: #94a3b8; /* gray-vs-400 */
 }

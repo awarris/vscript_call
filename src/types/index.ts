@@ -136,6 +136,7 @@ export interface Script {
   components: Component[];
   workflowRules: WorkflowRule[];
   globalVariables: GlobalVariable[];
+  conversation: { role: 'ia' | 'user'; content: string }[]; // Pour le chat IA
   settings: {
     fontFamily: string;
   };
@@ -156,3 +157,4 @@ export interface HistoryState<T> {
   present: T;
   future: T[];
 }
+

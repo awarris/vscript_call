@@ -27,6 +27,7 @@ export const createNewEmptyScript = (scriptName: string): Script => {
     components: [],
     workflowRules: [],
     globalVariables: [],
+    conversation: [], // Ajout du champ conversation
     settings: {
       fontFamily: 'Inter, sans-serif'
     },
