@@ -44,6 +44,7 @@ export interface Component {
   position: { x: number; y: number };
   size: { width: number; height: number };
   pageId: string;
+  parentId?: string; // NOUVEAU: Pour indiquer si un composant est dans un conteneur
 }
 
 export type WorkflowTriggerType =
