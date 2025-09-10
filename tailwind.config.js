@@ -1,6 +1,7 @@
 /** @type {import('tailwindcss').Config} */
 export default {
   content: ['./index.html', './src/**/*.{js,ts,jsx,tsx}'],
+  darkMode: 'class', // Activation du mode sombre basé sur la classe
   theme: {
     extend: {
       colors: {
@@ -33,6 +34,7 @@ export default {
           900: 'var(--color-blue-vs-900)',
         },
         'gray-vs': {
+          50: '#F9FAFB',
           100: 'var(--color-gray-vs-100)', 200: 'var(--color-gray-vs-200)',
           300: 'var(--color-gray-vs-300)', 400: 'var(--color-gray-vs-400)',
           500: 'var(--color-gray-vs-500)', 600: 'var(--color-gray-vs-600)',

@@ -20,10 +20,10 @@ export const SidePanel: React.FC<SidePanelProps> = ({ activePanel, children }) =
   const title = panelTitles[activePanel] || 'Panneau';
 
   return (
-    <aside className="w-80 bg-white border-r border-slate-200 flex flex-col shadow-lg">
+    <aside className="w-80 bg-white dark:bg-gray-vs-800 border-r border-slate-200 dark:border-gray-vs-700 flex flex-col shadow-lg">
       {/* En-tête du panneau */}
-      <header className="p-4 border-b border-slate-200">
-        <h2 className="text-lg font-semibold text-slate-800">{title}</h2>
+      <header className="p-4 border-b border-slate-200 dark:border-gray-vs-700">
+        <h2 className="text-lg font-semibold text-slate-800 dark:text-white">{title}</h2>
       </header>
 
       {/* Contenu dynamique du panneau */}

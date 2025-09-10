@@ -16,15 +16,15 @@
   --color-green-vs-800: #065F46;
   --color-green-vs-900: #064E3B;
   
-  --color-amber-vs-100: #fff4c7;
-  --color-amber-vs-200: #ffe785;
-  --color-amber-vs-300: #ffd230;
-  --color-amber-vs-400: #ffbb00;
-  --color-amber-vs-500: #ff9900;
-  --color-amber-vs-600: #e07000;
-  --color-amber-vs-700: #ba4e00;
-  --color-amber-vs-800: #963c00;
-  --color-amber-vs-900: #7a3306;
+  --color-amber-vs-100: #FEF3C7;
+  --color-amber-vs-200: #FDE68A;
+  --color-amber-vs-300: #FCD34D;
+  --color-amber-vs-400: #FBBF24;
+  --color-amber-vs-500: #F59E0B;
+  --color-amber-vs-600: #D97706;
+  --color-amber-vs-700: #B45309;
+  --color-amber-vs-800: #92400E;
+  --color-amber-vs-900: #78350F;
   
   --color-red-vs-100: #FEE2E2;
   --color-red-vs-200: #FCA5A5;
@@ -36,14 +36,14 @@
   --color-red-vs-800: #7F1D1D;
   --color-red-vs-900: #641E1E;
   
-  --color-blue-vs-100: #BFDBFE;
-  --color-blue-vs-200: #93C5FD;
-  --color-blue-vs-300: #60A5FA;
-  --color-blue-vs-400: #3B82F6;
-  --color-blue-vs-500: #2563EB;
-  --color-blue-vs-600: #1D4ED8;
-  --color-blue-vs-700: #1E40AF;
-  --color-blue-vs-800: #1E3A8A;
+  --color-blue-vs-100: #DBEAFE;
+  --color-blue-vs-200: #BFDBFE;
+  --color-blue-vs-300: #93C5FD;
+  --color-blue-vs-400: #60A5FA;
+  --color-blue-vs-500: #3B82F6;
+  --color-blue-vs-600: #2563EB;
+  --color-blue-vs-700: #1D4ED8;
+  --color-blue-vs-800: #1E40AF;
   --color-blue-vs-900: #1E3A8A;
   
   --color-gray-vs-100: #F3F4F6;
@@ -55,6 +55,8 @@
   --color-gray-vs-700: #374151;
   --color-gray-vs-800: #1F2937;
   --color-gray-vs-900: #111827;
+
+  --font-title: "Segoe UI Emoji", sans-serif; 
 }
 
 /* Styles globaux pour une meilleure apparence */
@@ -71,10 +73,19 @@ body {
 ::-webkit-scrollbar-track {
   background: #f1f5f9; /* gray-vs-100 */
 }
+.dark ::-webkit-scrollbar-track {
+  background: #1f2937; /* gray-vs-800 */
+}
 ::-webkit-scrollbar-thumb {
   background: #cbd5e1; /* gray-vs-300 */
   border-radius: 4px;
 }
+.dark ::-webkit-scrollbar-thumb {
+  background: #4b5563; /* gray-vs-600 */
+}
 ::-webkit-scrollbar-thumb:hover {
   background: #94a3b8; /* gray-vs-400 */
+}
+.dark ::-webkit-scrollbar-thumb:hover {
+    background: #6b7280; /* gray-vs-500 */
 }

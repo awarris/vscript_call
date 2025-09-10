@@ -1,6 +1,6 @@
 // chemin: vscript_call/src/components/Canvas/Canvas.tsx
 
-import React, { useRef, useCallback } from 'react';
+import React, { useRef } from 'react';
 import { useDrop } from 'react-dnd';
 import { Component, ScriptPage, DragItem, ComponentConfig } from '../../types';
 import { ComponentRenderer } from './ComponentRenderer';
@@ -9,7 +9,7 @@ import { Plus } from 'lucide-react';
 
 interface CanvasProps {
   components: Component[];
-  allComponents: Component[]; // <<<--- CORRECTION ICI
+  allComponents: Component[];
   onUpdateComponent: (id: string, updates: Partial<Component>) => void;
   onUpdateComponentPosition: (id: string, delta: { x: number; y: number }) => void;
   onRemoveComponent: (id: string) => void;
@@ -22,12 +22,16 @@ interface CanvasProps {
   onUpdatePage: (updates: Partial<ScriptPage>) => void;
   inlineEditingId: string | null;
   setInlineEditingId: (id: string | null) => void;
+  theme: 'light' | 'dark'; // Ajout de la prop theme
 }
 
 export const Canvas: React.FC<CanvasProps> = (props) => {
-  const { components, onUpdateComponent, onUpdateComponentPosition, selectedComponentId, onSelectComponent, onAddComponent } = props;
+  const { components, onUpdateComponent, onUpdateComponentPosition, selectedComponentId, onSelectComponent, onAddComponent, theme } = props;
   const canvasRef = useRef<HTMLDivElement>(null);
   const canvasWidth = getDeviceWidth(props.device);
+
+  // Détermine la couleur de fond du canevas en fonction du thème
+  const canvasBackgroundColor = theme === 'dark' ? '#111827' /* gray-vs-900 */ : (props.currentPage?.backgroundColor || '#ffffff');
 
   const findHoveredContainer = (x: number, y: number, draggedItemId?: string): string | undefined => {
     let bestMatch: Component | undefined;
@@ -96,18 +100,30 @@ export const Canvas: React.FC<CanvasProps> = (props) => {
   const rootComponents = components.filter(c => !c.parentId);
 
   return (
-    <div className="flex-1 bg-slate-100 p-8 overflow-auto">
+    <div className="flex-1 bg-gray-vs-100 dark:bg-gray-vs-900 p-8 overflow-auto">
       <div className="flex justify-center">
         <div ref={(node) => { canvasRef.current = node; drop(node); }}
-          className={`bg-white rounded-lg shadow-lg relative overflow-hidden ${isOver ? 'outline outline-2 outline-blue-400' : ''}`}
-          style={{ width: canvasWidth, height: 800, backgroundColor: props.currentPage?.backgroundColor || '#ffffff' }}
+          className={`rounded-lg shadow-lg relative overflow-hidden transition-colors ${isOver ? 'outline outline-2 outline-blue-400' : ''}`}
+          style={{ width: canvasWidth, height: 800, backgroundColor: canvasBackgroundColor }}
           onClick={handleCanvasClick}>
-          <div className="absolute inset-0 pointer-events-none" style={{ backgroundImage: `linear-gradient(to right, #e2e8f0 1px, transparent 1px), linear-gradient(to bottom, #e2e8f0 1px, transparent 1px)`, backgroundSize: '20px 20px' }} />
+          
+          <div 
+            className="absolute inset-0 pointer-events-none" 
+            style={{ 
+              backgroundImage: `
+                linear-gradient(to right, ${theme === 'dark' ? 'rgba(255,255,255,0.05)' : '#e2e8f0'} 1px, transparent 1px), 
+                linear-gradient(to bottom, ${theme === 'dark' ? 'rgba(255,255,255,0.05)' : '#e2e8f0'} 1px, transparent 1px)
+              `, 
+              backgroundSize: '20px 20px' 
+            }} 
+          />
+          
           {rootComponents.map(component => <ComponentRenderer key={component.id} {...props} component={component} onUpdateComponentPosition={onUpdateComponentPosition} selectedComponentId={selectedComponentId} onSelectComponent={onSelectComponent} />)}
+          
           {components.length === 0 && (
-            <div className="absolute inset-0 flex items-center justify-center pointer-events-none text-center text-slate-400">
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none text-center text-slate-400 dark:text-gray-vs-500">
               <div>
-                <div className="w-24 h-24 mx-auto mb-4 border-2 border-dashed border-slate-300 rounded-lg flex items-center justify-center"><Plus size={32} /></div>
+                <div className="w-24 h-24 mx-auto mb-4 border-2 border-dashed border-slate-300 dark:border-gray-vs-600 rounded-lg flex items-center justify-center"><Plus size={32} /></div>
                 <p className="font-semibold">Commencez à créer</p>
                 <p className="text-sm">Glissez des composants depuis la barre latérale.</p>
               </div>

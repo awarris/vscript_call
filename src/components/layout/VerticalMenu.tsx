@@ -1,17 +1,15 @@
 // chemin: vscript_call/src/components/layout/VerticalMenu.tsx
 
-import React, { useState } from 'react';
+import React from 'react';
 import { 
   LayoutGrid, 
   File, 
   Zap, 
   Database, 
-  Settings, 
-  ChevronLeft, 
-  ChevronRight 
+  Settings
 } from 'lucide-react';
 
-// Définition d'un type pour les éléments du menu pour plus de clarté
+// Définition du type pour les éléments du menu pour plus de clarté
 type MenuItem = {
   id: string;
   label: string;
@@ -32,50 +30,27 @@ interface VerticalMenuProps {
   setActivePanel: (panelId: string) => void;
 }
 
+/**
+ * Le menu vertical a été transformé en une barre d'icônes compacte.
+ * Il est maintenant destiné à être placé à côté des panneaux qu'il contrôle.
+ */
 export const VerticalMenu: React.FC<VerticalMenuProps> = ({ activePanel, setActivePanel }) => {
-  const [isCollapsed, setIsCollapsed] = useState(false);
-
   return (
-    <nav 
-      className={`bg-slate-800 text-white flex flex-col transition-all duration-300 ease-in-out ${
-        isCollapsed ? 'w-16' : 'w-60'
-      }`}
-    >
-      {/* En-tête du menu */}
-      <div className="p-4 flex items-center justify-between border-b border-slate-700">
-        {!isCollapsed && <h1 className="text-xl font-bold text-white">V-Script</h1>}
+    <nav className="bg-slate-50 dark:bg-gray-vs-800 border-r border-l border-slate-200 dark:border-gray-vs-700 flex flex-col items-center py-4 space-y-2">
+      {menuItems.map(({ id, label, icon: Icon }) => (
         <button
-          onClick={() => setIsCollapsed(!isCollapsed)}
-          className="p-1 rounded-full hover:bg-slate-700"
-          title={isCollapsed ? "Développer" : "Réduire"}
+          key={id}
+          onClick={() => setActivePanel(id)}
+          title={label}
+          className={`flex items-center justify-center w-12 h-12 rounded-lg transition-colors duration-200 ${
+            activePanel === id 
+              ? 'bg-blue-600 text-white' 
+              : 'text-slate-500 dark:text-gray-vs-300 hover:bg-slate-200 dark:hover:bg-gray-vs-700 hover:text-slate-700 dark:hover:text-white'
+          }`}
         >
-          {isCollapsed ? <ChevronRight size={20} /> : <ChevronLeft size={20} />}
+          <Icon size={22} />
         </button>
-      </div>
-
-      {/* Liens de navigation */}
-      <div className="flex-1 py-4">
-        {menuItems.map(({ id, label, icon: Icon }) => (
-          <button
-            key={id}
-            onClick={() => setActivePanel(id)}
-            title={label}
-            className={`flex items-center w-full px-4 py-3 text-sm font-medium transition-colors duration-200 ${
-              activePanel === id 
-                ? 'bg-blue-600 text-white' 
-                : 'text-slate-300 hover:bg-slate-700 hover:text-white'
-            } ${isCollapsed ? 'justify-center' : ''}`}
-          >
-            <Icon size={20} className="flex-shrink-0" />
-            {!isCollapsed && <span className="ml-4">{label}</span>}
-          </button>
-        ))}
-      </div>
-
-      {/* Pied de page du menu (optionnel) */}
-      <div className="p-4 border-t border-slate-700">
-        {/* Contenu futur du pied de page */}
-      </div>
+      ))}
     </nav>
   );
 };
