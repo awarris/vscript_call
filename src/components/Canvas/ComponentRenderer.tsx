@@ -140,7 +140,14 @@ export const ComponentRenderer: React.FC<ComponentRendererProps> = (props) => {
       case 'input': case 'inputDate': case 'inputTime': return <input {...component.config.attributes} style={style} readOnly />;
       case 'textarea': return <textarea {...component.config.attributes} value={String(component.config.value || '')} style={style} readOnly />;
       case 'image': return <img src={component.config.src} alt={component.config.alt} style={style} />;
-      case 'iframe': return <div style={{ ...style, display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#e2e8f0', pointerEvents: 'none' }}>Contenu Iframe</div>;
+      case 'iframe':
+        if (component.config.htmlContent) {
+          return <iframe srcDoc={component.config.htmlContent} style={{...style, pointerEvents: 'none'}} title="iframe content" />;
+        }
+        if (component.config.src) {
+          return <iframe src={component.config.src} style={{...style, pointerEvents: 'none'}} title="iframe content" />;
+        }
+        return <div style={{ ...style, display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#e2e8f0', pointerEvents: 'none' }}>Contenu Iframe</div>;
       case 'select': return <select style={style} disabled> {(component.config.options || []).map((opt: any, i: number) => (<option key={i} value={opt.value}>{opt.label}</option>))} </select>;
       case 'checkbox': return <div style={{ ...style, display: 'flex', alignItems: 'center', pointerEvents: 'none' }}> <input type="checkbox" checked={component.config.checked} readOnly style={{ marginRight: '8px' }} /> <span style={{ color: component.config.style?.color, fontFamily: component.config.style?.fontFamily }}> {component.config.label} </span> </div>;
       case 'calculator': return <div style={{ pointerEvents: 'none' }}><StaticCalculator styleConfig={component.config.style as ComponentStyle} /></div>;

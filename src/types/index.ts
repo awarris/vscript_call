@@ -30,7 +30,7 @@ export interface ComponentConfig {
   label?: string;
   style?: ComponentStyle;
   targetPageId?: string;
-  // Permet de stocker n'importe quelle autre propriété (src, alt, options, attributes, etc.)
+  // Permet de stocker n'importe quelle autre propriété (src, alt, options, attributes, htmlContent, etc.)
   [key: string]: any;
 }
 

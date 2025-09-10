@@ -209,6 +209,9 @@ export const PreviewPane: React.FC<PreviewPaneProps> = ({
         case 'image':
             return <img src={component.config.src} alt={component.config.alt} style={style} {...eventHandlers} />;
         case 'iframe':
+            if (component.config.htmlContent) {
+              return <iframe srcDoc={component.config.htmlContent} style={style} title="iframe content" />;
+            }
             return <iframe src={component.config.src} style={style} title="iframe content" />;
         case 'select':
             return (

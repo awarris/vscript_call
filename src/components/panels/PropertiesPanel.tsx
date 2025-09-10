@@ -1,7 +1,7 @@
 // chemin: vscript_call/src/components/panels/PropertiesPanel.tsx
 
 import React from 'react';
-import { Settings, Palette, Type, Link2, AlignCenter, AlignLeft, AlignRight, Bold, Italic, Underline } from 'lucide-react';
+import { Settings, Palette, Type, Link2, AlignCenter, AlignLeft, AlignRight, Bold, Italic, Underline, Globe } from 'lucide-react';
 import { Component, ScriptPage, ComponentStyle } from '../../types';
 
 interface PropertiesPanelProps {
@@ -95,6 +95,21 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
     </>
   );
 
+  const renderIframeSection = () => (
+    <div className="space-y-4">
+      <PropertyInput
+        label="URL de la source (src)"
+        value={selectedComponent.config.src || ''}
+        onChange={val => updateConfig({ src: val, htmlContent: '' })} // On vide le htmlContent si on met une URL
+      />
+      <TextareaInput
+        label="Contenu HTML direct"
+        value={selectedComponent.config.htmlContent || ''}
+        onChange={val => updateConfig({ htmlContent: val, src: '' })} // On vide la src si on met du HTML
+      />
+    </div>
+  );
+
   const renderTypographySection = () => {
     const style = selectedComponent.config.style || {};
     const fontSize = parseInt(String(style.fontSize || '16').replace('px', ''), 10);
@@ -179,9 +194,15 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
         <p className="text-xs text-slate-500">ID: {selectedComponent.id.slice(-6)}</p>
       </div>
 
-      {selectedComponent.type !== 'calculator' && (
+      {selectedComponent.type !== 'calculator' && selectedComponent.type !== 'iframe' && (
         <Section title="Contenu" icon={Type}>
             {renderContentSection()}
+        </Section>
+      )}
+      
+      {selectedComponent.type === 'iframe' && (
+        <Section title="Contenu Iframe" icon={Globe}>
+          {renderIframeSection()}
         </Section>
       )}
 
