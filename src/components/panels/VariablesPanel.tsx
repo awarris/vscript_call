@@ -1,7 +1,7 @@
 // chemin: vscript_call/src/components/panels/VariablesPanel.tsx
 
-import React from 'react';
-import { Plus, Edit3, Trash2, Database } from 'lucide-react';
+import React, { useState, useMemo } from 'react';
+import { Plus, Edit3, Trash2, Database, Link } from 'lucide-react';
 import { Script, GlobalVariable } from '../../types';
 import { generateId } from '../../utils/helpers';
 
@@ -12,29 +12,59 @@ interface VariablesPanelProps {
 }
 
 export const VariablesPanel: React.FC<VariablesPanelProps> = ({ script, setScript }) => {
+  const [editingVariable, setEditingVariable] = useState<GlobalVariable | null>(null);
 
-  /**
-   * Ajoute une nouvelle variable globale au script.
-   */
+  // On crée une map pour accéder rapidement au nom de la page d'un composant
+  const pageNameById = useMemo(() => {
+    const map = new Map<string, string>();
+    script.pages.forEach(page => {
+      map.set(page.id, page.name);
+    });
+    return map;
+  }, [script.pages]);
+
+
   const handleAddVariable = () => {
     const newVariable: GlobalVariable = {
       id: generateId(),
-      name: `variable_${script.globalVariables.length + 1}`,
+      name: `V_variable_${script.globalVariables.length + 1}`,
       type: 'string',
       defaultValue: '',
       description: '',
+      componentId: '',
     };
-    
-    setScript(prevScript => ({
-      ...prevScript,
-      globalVariables: [...prevScript.globalVariables, newVariable],
-    }));
+    setEditingVariable(newVariable);
   };
 
-  /**
-   * Supprime une variable globale par son ID.
-   * @param variableId - L'ID de la variable à supprimer.
-   */
+  const handleEditVariable = (variable: GlobalVariable) => {
+    setEditingVariable(variable);
+  };
+
+  const handleSaveVariable = () => {
+    if (!editingVariable) return;
+
+    if (!editingVariable.name.startsWith('V_')) {
+      alert("Le nom de la variable doit commencer par 'V_'.");
+      return;
+    }
+
+    const isNew = !script.globalVariables.some(v => v.id === editingVariable.id);
+    if (isNew) {
+      setScript(prev => ({
+        ...prev,
+        globalVariables: [...prev.globalVariables, editingVariable],
+      }));
+    } else {
+      setScript(prev => ({
+        ...prev,
+        globalVariables: prev.globalVariables.map(v =>
+          v.id === editingVariable.id ? editingVariable : v
+        ),
+      }));
+    }
+    setEditingVariable(null);
+  };
+
   const handleRemoveVariable = (variableId: string) => {
     // TODO: Ajouter une vérification pour s'assurer que la variable n'est pas utilisée dans un workflow
     setScript(prevScript => ({
@@ -43,6 +73,74 @@ export const VariablesPanel: React.FC<VariablesPanelProps> = ({ script, setScrip
     }));
   };
 
+  const handleInputChange = (field: keyof GlobalVariable, value: any) => {
+    if (editingVariable) {
+      setEditingVariable({ ...editingVariable, [field]: value });
+    }
+  };
+
+  // Formulaire d'édition/création
+  if (editingVariable) {
+    return (
+      <div className="space-y-4 p-4 bg-slate-50 rounded-lg border">
+        <h3 className="text-lg font-semibold text-slate-800">
+          {script.globalVariables.some(v => v.id === editingVariable.id) ? 'Modifier la variable' : 'Nouvelle Variable'}
+        </h3>
+        
+        <div>
+          <label className="text-sm font-medium text-slate-700">Nom</label>
+          <input
+            type="text"
+            value={editingVariable.name}
+            onChange={(e) => handleInputChange('name', e.target.value)}
+            className="w-full mt-1 px-3 py-2 text-sm border border-slate-300 rounded-lg"
+          />
+           <p className="text-xs text-slate-500 mt-1">Doit commencer par "V_".</p>
+        </div>
+
+        <div>
+          <label className="text-sm font-medium text-slate-700">Type</label>
+          <select
+            value={editingVariable.type}
+            onChange={(e) => handleInputChange('type', e.target.value)}
+            className="w-full mt-1 px-3 py-2 text-sm border border-slate-300 rounded-lg bg-white"
+          >
+            <option value="string">Texte (String)</option>
+            <option value="number">Nombre (Number)</option>
+            <option value="boolean">Booléen (Boolean)</option>
+          </select>
+        </div>
+        
+        <div>
+            <label className="text-sm font-medium text-slate-700">Composant lié</label>
+            <select
+                value={editingVariable.componentId || ''}
+                onChange={(e) => handleInputChange('componentId', e.target.value)}
+                className="w-full mt-1 px-3 py-2 text-sm border border-slate-300 rounded-lg bg-white"
+            >
+                {script.components.map(comp => (
+                    <option key={comp.id} value={comp.id}>
+                        {comp.type} ({comp.id.slice(-4)}) - Page: {pageNameById.get(comp.pageId) || 'Inconnue'}
+                    </option>
+                ))}
+            </select>
+            <p className="text-xs text-slate-500 mt-1">Lier la variable à un composant du canevas.</p>
+        </div>
+
+
+        <div className="flex items-center space-x-2">
+          <button onClick={handleSaveVariable} className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+            Enregistrer
+          </button>
+          <button onClick={() => setEditingVariable(null)} className="px-4 py-2 bg-slate-200 text-slate-700 rounded-lg hover:bg-slate-300">
+            Annuler
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Vue principale
   return (
     <div className="space-y-4">
       <button
@@ -54,33 +152,42 @@ export const VariablesPanel: React.FC<VariablesPanelProps> = ({ script, setScrip
       </button>
 
       <div className="space-y-2">
-        {script.globalVariables.map(variable => (
-          <div key={variable.id} className="p-3 bg-white border border-slate-200 rounded-lg">
-            <div className="flex items-center justify-between mb-1">
-              <div className="flex items-center space-x-2">
-                <span className="text-xs font-mono bg-slate-100 px-1.5 py-0.5 rounded text-slate-600">
-                  {variable.type.substring(0,3)}
-                </span>
-                <span className="text-sm font-medium text-slate-900">{variable.name}</span>
+        {script.globalVariables.map(variable => {
+          const linkedComponent = script.components.find(c => c.id === variable.componentId);
+          return (
+            <div key={variable.id} className="p-3 bg-white border border-slate-200 rounded-lg">
+              <div className="flex items-center justify-between mb-1">
+                <div className="flex items-center space-x-2">
+                  <span className="text-xs font-mono bg-slate-100 px-1.5 py-0.5 rounded text-slate-600">
+                    {variable.type.substring(0,3)}
+                  </span>
+                  <span className="text-sm font-medium text-slate-900">{variable.name}</span>
+                </div>
+                <div className="flex items-center space-x-1">
+                  <button onClick={() => handleEditVariable(variable)} className="p-1 text-slate-400 hover:text-blue-600 rounded" title="Modifier">
+                    <Edit3 size={14} />
+                  </button>
+                  <button
+                    className="p-1 text-slate-400 hover:text-red-600 rounded"
+                    title="Supprimer"
+                    onClick={() => handleRemoveVariable(variable.id)}
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                </div>
               </div>
-              <div className="flex items-center space-x-1">
-                <button className="p-1 text-slate-400 hover:text-blue-600 rounded" title="Modifier">
-                  <Edit3 size={14} />
-                </button>
-                <button 
-                  className="p-1 text-slate-400 hover:text-red-600 rounded" 
-                  title="Supprimer"
-                  onClick={() => handleRemoveVariable(variable.id)}
-                >
-                  <Trash2 size={14} />
-                </button>
-              </div>
+              <p className="text-xs text-slate-500">
+                Valeur par défaut: {JSON.stringify(variable.defaultValue)}
+              </p>
+              {linkedComponent && (
+                <div className="text-xs text-slate-500 mt-1 flex items-center space-x-1">
+                  <Link size={12} className="text-blue-500" />
+                  <span>Liée à: {linkedComponent.type} sur la page "{pageNameById.get(linkedComponent.pageId)}"</span>
+                </div>
+              )}
             </div>
-            <p className="text-xs text-slate-500">
-              Valeur par défaut: {JSON.stringify(variable.defaultValue)}
-            </p>
-          </div>
-        ))}
+          )
+        })}
       </div>
 
       {script.globalVariables.length === 0 && (

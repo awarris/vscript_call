@@ -20,6 +20,7 @@ import { ComponentPalette } from '../components/panels/ComponentPalette';
 import { PropertiesPanel } from '../components/panels/PropertiesPanel';
 import { WorkflowPanel } from '../components/panels/WorkflowPanel';
 import { VariablesPanel } from '../components/panels/VariablesPanel';
+import { LayersPanel } from '../components/panels/LayersPanel'; // <-- 1. Importer le nouveau composant
 import { ArrowLeft } from 'lucide-react';
 
 export const ScriptEditor: React.FC = () => {
@@ -150,28 +151,42 @@ export const ScriptEditor: React.FC = () => {
         </SidePanel>
         <main className="flex-1 flex flex-col overflow-hidden">
           <Toolbar script={script} onUpdateScript={(updates) => handleSetScript(prev => ({ ...prev, ...updates }))} onImportScript={() => {}} isPreviewMode={isPreviewMode} onTogglePreview={() => setIsPreviewMode(!isPreviewMode)} currentDevice={device} onDeviceChange={setDevice} undo={undo} redo={redo} canUndo={canUndo} canRedo={canRedo} />
-          <div className="flex-1 overflow-auto relative">
-            <Link to="/" className="absolute top-4 left-4 z-10 flex items-center space-x-2 px-3 py-1.5 bg-white rounded-full shadow-md hover:bg-slate-100 transition-colors">
-                <ArrowLeft size={16} className="text-slate-600" />
-                <span className="text-sm font-semibold text-slate-700">Retour</span>
-            </Link>
-            {isPreviewMode ? (
-              <PreviewPane script={script} currentPageId={currentPageId || ''} device={device} onNavigateToPage={setCurrentPageId} />
-            ) : (
-              <Canvas 
-                components={currentPageComponents} 
-                onUpdateComponent={updateComponent} 
-                onRemoveComponent={removeComponent} 
-                onDuplicateComponent={duplicateComponent} 
-                selectedComponentId={selectedComponentId} 
-                onSelectComponent={handleSelectComponent} 
-                device={device} 
-                onAddComponent={addComponent} 
-                currentPage={currentPage} 
-                onUpdatePage={(updates) => handleSetScript(prev => ({ ...prev, pages: prev.pages.map(p => p.id === currentPageId ? {...p, ...updates} : p) }))}
-                inlineEditingId={inlineEditingId}
-                setInlineEditingId={setInlineEditingId}
-              />
+          
+          {/* 2. Modifier la structure ici pour inclure le nouveau panneau */}
+          <div className="flex-1 flex overflow-hidden">
+            <div className="flex-1 overflow-auto relative">
+                <Link to="/" className="absolute top-4 left-4 z-10 flex items-center space-x-2 px-3 py-1.5 bg-white rounded-full shadow-md hover:bg-slate-100 transition-colors">
+                    <ArrowLeft size={16} className="text-slate-600" />
+                    <span className="text-sm font-semibold text-slate-700">Retour</span>
+                </Link>
+                {isPreviewMode ? (
+                  <PreviewPane script={script} currentPageId={currentPageId || ''} device={device} onNavigateToPage={setCurrentPageId} />
+                ) : (
+                  <Canvas 
+                    components={currentPageComponents} 
+                    onUpdateComponent={updateComponent} 
+                    onRemoveComponent={removeComponent} 
+                    onDuplicateComponent={duplicateComponent} 
+                    selectedComponentId={selectedComponentId} 
+                    onSelectComponent={handleSelectComponent} 
+                    device={device} 
+                    onAddComponent={addComponent} 
+                    currentPage={currentPage} 
+                    onUpdatePage={(updates) => handleSetScript(prev => ({ ...prev, pages: prev.pages.map(p => p.id === currentPageId ? {...p, ...updates} : p) }))}
+                    inlineEditingId={inlineEditingId}
+                    setInlineEditingId={setInlineEditingId}
+                  />
+                )}
+            </div>
+            
+            {/* 3. Ajouter le panneau ici, conditionnellement au mode édition */}
+            {!isPreviewMode && (
+                <LayersPanel
+                    components={currentPageComponents}
+                    selectedComponentId={selectedComponentId}
+                    onSelectComponent={handleSelectComponent}
+                    onRemoveComponent={removeComponent}
+                />
             )}
           </div>
         </main>
