@@ -1,6 +1,10 @@
 // chemin: vscript_call/src/components/panels/WorkflowPanel.tsx
 
 import React, { useState, useMemo } from 'react';
+import Editor from 'react-simple-code-editor';
+import { highlight, languages } from 'prismjs/components/prism-core';
+import 'prismjs/components/prism-clike';
+import 'prismjs/components/prism-javascript';
 import { Plus, Trash2, Zap, Settings, ArrowLeft, Code } from 'lucide-react';
 import { Script, WorkflowRule, WorkflowTriggerType, WorkflowAction, Component, ScriptPage, WorkflowActionType } from '../../types';
 import { generateId } from '../../utils/helpers';
@@ -183,15 +187,20 @@ const WorkflowEditor: React.FC<WorkflowEditorProps> = ({ rule, onSave, onCancel,
                 <input type="text" placeholder="Votre message..." value={action.config.message || ''} onChange={(e) => handleActionChange(index, 'message', e.target.value)} className="w-full mt-1 px-3 py-2 text-sm border border-slate-300 rounded-lg"/>
             )}
             {action.type === 'executeCode' && (
-                <div className="relative">
-                    <Code size={14} className="absolute top-2.5 left-2 text-slate-400" />
-                    <textarea 
-                        placeholder="/* Votre code JavaScript ici... */" 
-                        value={action.config.code || ''} 
-                        onChange={(e) => handleActionChange(index, 'code', e.target.value)} 
-                        className="w-full mt-1 pl-7 pr-2 py-2 text-sm font-mono border border-slate-300 rounded-lg h-32 resize-y"
-                    />
-                </div>
+              <div className="bg-gray-900 rounded-lg p-1 border border-slate-700">
+                <Editor
+                  value={action.config.code || ''}
+                  onValueChange={code => handleActionChange(index, 'code', code)}
+                  highlight={code => highlight(code, languages.js, 'js')}
+                  padding={10}
+                  className="font-mono text-sm bg-transparent"
+                  style={{
+                    minHeight: '120px',
+                    backgroundColor: '#1E1E1E', // Couleur de fond type VS Code
+                    color: '#D4D4D4' // Couleur de texte par défaut
+                  }}
+                />
+              </div>
             )}
           </div>
         ))}

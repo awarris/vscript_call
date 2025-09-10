@@ -31,6 +31,8 @@ export interface ComponentConfig {
   style?: ComponentStyle;
   labelStyle?: ComponentStyle; // Styles spécifiques pour le libellé
   targetPageId?: string;
+  visible?: boolean; // NOUVEAU: Pour la visibilité par défaut
+  targetComponentId?: string; // NOUVEAU: Pour lier un composant à un autre (ex: checkbox de visibilité)
   // Permet de stocker n'importe quelle autre propriété (src, alt, options, attributes, etc.)
   [key: string]: any;
 }
@@ -68,7 +70,6 @@ export interface WorkflowCondition {
   value: any;
 }
 
-// MISE À JOUR : Ajout de 'executeCode' au type d'action et 'code' à la configuration
 export type WorkflowActionType = 'navigate' | 'setVariable' | 'showMessage' | 'executeCode';
 
 export interface WorkflowAction {
@@ -83,10 +84,9 @@ export interface WorkflowAction {
       property: 'value';
     };
     message?: string;
-    code?: string; // Pour l'action 'executeCode'
+    code?: string;
   };
 }
-
 
 export interface WorkflowRule {
   id: string;
@@ -109,7 +109,7 @@ export interface GlobalVariable {
 export interface ComponentLibraryItem {
   id: string;
   name: string;
-  category: string; // Type plus générique pour accepter "Basique", "Avancé", etc.
+  category: string;
   icon: string;
   description: string;
   defaultConfig: ComponentConfig;
