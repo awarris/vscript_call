@@ -1,9 +1,129 @@
 // chemin: src/components/PreviewPane/PreviewPane.tsx
 
 import React, { useState, useEffect } from 'react';
-import { Component, Script, WorkflowTriggerType } from '../../types';
+import { Component, Script, WorkflowTriggerType, ComponentStyle } from '../../types';
 import { getDeviceWidth } from '../../utils/helpers';
-import { File } from 'lucide-react';
+import { File, Delete } from 'lucide-react';
+
+// Sous-composant pour la calculatrice fonctionnelle
+const FunctionalCalculator: React.FC<{ styleConfig: ComponentStyle }> = ({ styleConfig }) => {
+    const [currentValue, setCurrentValue] = useState('0');
+    const [previousValue, setPreviousValue] = useState<string | null>(null);
+    const [operator, setOperator] = useState<string | null>(null);
+    const [displayValue, setDisplayValue] = useState('0');
+
+    useEffect(() => {
+        let display = currentValue;
+        if (operator) {
+            display = `${previousValue || ''} ${operator} ${currentValue === previousValue ? '' : currentValue}`;
+        }
+        setDisplayValue(display);
+    }, [currentValue, previousValue, operator]);
+
+    const handleDigitClick = (digit: string) => {
+        if (currentValue === '0' || (operator && currentValue === previousValue)) {
+            setCurrentValue(digit);
+        } else {
+            setCurrentValue(currentValue + digit);
+        }
+    };
+
+    const handleDecimalClick = () => {
+        if (!currentValue.includes('.')) {
+            setCurrentValue(currentValue + '.');
+        }
+    };
+
+    const handleOperatorClick = (nextOperator: string) => {
+        if (operator && previousValue) {
+             handleEqualClick();
+        } else {
+            setPreviousValue(currentValue);
+        }
+        setOperator(nextOperator);
+    };
+
+    const calculate = () => {
+        const prev = parseFloat(previousValue!);
+        const current = parseFloat(currentValue);
+        let result: number;
+        switch (operator) {
+            case '+': result = prev + current; break;
+            case '-': result = prev - current; break;
+            case '*': result = prev * current; break;
+            case '/': result = prev / current; break;
+            default: return;
+        }
+        return result;
+    };
+
+    const handleEqualClick = () => {
+        if (!operator || previousValue === null) return;
+        const result = calculate();
+        if (result !== undefined) {
+            const resultString = String(result);
+            setCurrentValue(resultString);
+            setPreviousValue(null);
+            setOperator(null);
+        }
+    };
+
+    const handleClearClick = () => {
+        setCurrentValue('0');
+        setPreviousValue(null);
+        setOperator(null);
+    };
+
+    const handleBackspaceClick = () => {
+        if (currentValue.length > 1) {
+            setCurrentValue(currentValue.slice(0, -1));
+        } else {
+            setCurrentValue('0');
+        }
+    };
+
+    const buttons = [
+        { label: <Delete size={18} className="mx-auto" />, action: handleBackspaceClick, style: { bg: styleConfig.buttonColor, text: styleConfig.buttonTextColor }, span: 'col-span-1' },
+        { label: 'C', action: handleClearClick, style: { bg: styleConfig.clearColor, text: styleConfig.clearTextColor }, span: 'col-span-2' },
+        { label: '/', action: () => handleOperatorClick('/'), style: { bg: styleConfig.operatorColor, text: styleConfig.operatorTextColor }, span: 'col-span-1' },
+        { label: '7', action: () => handleDigitClick('7'), style: { bg: styleConfig.buttonColor, text: styleConfig.buttonTextColor }, span: 'col-span-1' },
+        { label: '8', action: () => handleDigitClick('8'), style: { bg: styleConfig.buttonColor, text: styleConfig.buttonTextColor }, span: 'col-span-1' },
+        { label: '9', action: () => handleDigitClick('9'), style: { bg: styleConfig.buttonColor, text: styleConfig.buttonTextColor }, span: 'col-span-1' },
+        { label: '*', action: () => handleOperatorClick('*'), style: { bg: styleConfig.operatorColor, text: styleConfig.operatorTextColor }, span: 'col-span-1' },
+        { label: '4', action: () => handleDigitClick('4'), style: { bg: styleConfig.buttonColor, text: styleConfig.buttonTextColor }, span: 'col-span-1' },
+        { label: '5', action: () => handleDigitClick('5'), style: { bg: styleConfig.buttonColor, text: styleConfig.buttonTextColor }, span: 'col-span-1' },
+        { label: '6', action: () => handleDigitClick('6'), style: { bg: styleConfig.buttonColor, text: styleConfig.buttonTextColor }, span: 'col-span-1' },
+        { label: '-', action: () => handleOperatorClick('-'), style: { bg: styleConfig.operatorColor, text: styleConfig.operatorTextColor }, span: 'col-span-1' },
+        { label: '1', action: () => handleDigitClick('1'), style: { bg: styleConfig.buttonColor, text: styleConfig.buttonTextColor }, span: 'col-span-1' },
+        { label: '2', action: () => handleDigitClick('2'), style: { bg: styleConfig.buttonColor, text: styleConfig.buttonTextColor }, span: 'col-span-1' },
+        { label: '3', action: () => handleDigitClick('3'), style: { bg: styleConfig.buttonColor, text: styleConfig.buttonTextColor }, span: 'col-span-1' },
+        { label: '+', action: () => handleOperatorClick('+'), style: { bg: styleConfig.operatorColor, text: styleConfig.operatorTextColor }, span: 'col-span-1' },
+        { label: '0', action: () => handleDigitClick('0'), style: { bg: styleConfig.buttonColor, text: styleConfig.buttonTextColor }, span: 'col-span-2' },
+        { label: '.', action: handleDecimalClick, style: { bg: styleConfig.buttonColor, text: styleConfig.buttonTextColor }, span: 'col-span-1' },
+        { label: '=', action: handleEqualClick, style: { bg: styleConfig.equalColor, text: styleConfig.equalTextColor }, span: 'col-span-1' },
+    ];
+
+    return (
+        <div className="w-full h-full p-2 rounded-lg flex flex-col" style={{ backgroundColor: styleConfig.backgroundColor }}>
+            <div className="w-full h-1/6 rounded-md mb-2 flex items-end justify-end p-2 text-2xl text-right overflow-hidden break-all" style={{ backgroundColor: styleConfig.displayColor, color: styleConfig.displayTextColor }}>
+                {displayValue}
+            </div>
+            <div className="grid grid-cols-4 gap-2 flex-1">
+                {buttons.map((btn, i) => (
+                    <button
+                        key={i}
+                        onClick={btn.action}
+                        className={`rounded-md text-lg flex items-center justify-center transition-opacity hover:opacity-80 active:opacity-60 ${btn.span}`}
+                        style={{ backgroundColor: btn.style.bg, color: btn.style.text }}
+                    >
+                        {btn.label}
+                    </button>
+                ))}
+            </div>
+        </div>
+    );
+};
+
 
 interface PreviewPaneProps {
   script: Script;
@@ -17,7 +137,7 @@ export const PreviewPane: React.FC<PreviewPaneProps> = ({
 }) => {
   const [variables, setVariables] = useState<Record<string, any>>({});
   const [componentValues, setComponentValues] = useState<Record<string, any>>({});
-  
+
   const currentPage = script.pages.find(p => p.id === currentPageId);
   const currentPageIndex = script.pages.findIndex(p => p.id === currentPageId);
   const components = script.components.filter(c => c.pageId === currentPageId);
@@ -34,7 +154,7 @@ export const PreviewPane: React.FC<PreviewPaneProps> = ({
   useEffect(() => { setComponentValues({}); }, [currentPageId]);
 
   const executeWorkflow = (triggerType: WorkflowTriggerType, componentId: string) => {
-    const applicableRules = workflowRules.filter(rule => 
+    const applicableRules = workflowRules.filter(rule =>
       rule.trigger.type === triggerType && rule.trigger.componentId === componentId
     );
     for (const rule of applicableRules) {
@@ -98,6 +218,8 @@ export const PreviewPane: React.FC<PreviewPaneProps> = ({
             );
         case 'checkbox':
             return <div style={style}><input type="checkbox" checked={componentValues[component.id] || component.config.checked} onChange={(e) => handleComponentValueChange(component.id, e.target.checked)} {...eventHandlers} /> <label>{component.config.label}</label></div>;
+        case 'calculator':
+            return <FunctionalCalculator styleConfig={component.config.style as ComponentStyle} />;
         case 'divPannel': case 'ficheClient':
             return <div style={style} {...eventHandlers}></div>;
         default:
@@ -116,7 +238,7 @@ export const PreviewPane: React.FC<PreviewPaneProps> = ({
             {renderPreviewComponent(component)}
           </div>
         ))}
-        
+
         {/* CORRECTION : Pied de page pour l'information de la page actuelle */}
         <div className="absolute bottom-0 left-0 right-0 bg-slate-800 text-white p-2 flex items-center justify-between text-xs">
             <div className="flex items-center space-x-2">

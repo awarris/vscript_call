@@ -7,19 +7,20 @@ import { ComponentLibraryItem, ComponentConfig } from '../../types';
 
 // Votre liste complète d'objets est directement intégrée ici.
 const newTools = [
-    { "type": "paragraphe", "value": "Votre texte ici...", "style": { "padding": "10px", "fontSize": "16px", "lineHeight": "1.5", "color": "#222", "position": "absolute", "top": "0", "left": "10px" } },
-    { "type": "h1", "value": "Titre de niveau 1", "style": { "fontSize": "2.25rem", "fontWeight": "700", "color": "#1e293b", "position": "absolute", "top": "0", "left": "10px" } },
-    { "type": "button", "value": "Cliquez ici", "style": { "backgroundColor": "#3b82f6", "color": "white", "border": "none", "padding": "12px 24px", "textAlign": "center", "fontSize": "16px", "borderRadius": "8px", "cursor": "pointer", "position": "absolute", "top": "0", "left": "10px" } },
-    { "type": "input", "value": "", "attributes": { "type": "text", "placeholder": "Saisissez du texte" }, "style": { "padding": "8px", "border": "1px solid #cbd5e1", "borderRadius": "6px", "width": "200px", "position": "absolute", "top": "0", "left": "10px" } },
-    { "type": "textarea", "value": "", "attributes": { "rows": 4, "placeholder": "Écrivez votre message..." }, "style": { "padding": "10px", "border": "1px solid #cbd5e1", "borderRadius": "6px", "width": "300px", "height": "100px", "position": "absolute", "top": "0", "left": "10px" } },
-    { "type": "image", "src": "https://via.placeholder.com/300x200.png?text=Image", "alt": "placeholder image", "style": { "width": "300px", "height": "200px", "objectFit": "cover", "position": "absolute", "top": "0", "left": "10px" } },
-    { "type": "select", "name": "listederoulante", "style": { "padding": "10px 12px", "border": "1px solid #d1d5db", "borderRadius": "6px", "width": "220px", "position": "absolute", "top": "0", "left": "10px" }, "options": [ { "value": "option1", "label": "Option 1" }, { "value": "option2", "label": "Option 2" } ] },
-    { "type": "checkbox", "label": "Accepter les conditions", "checked": false, "style": {"position": "absolute", "top": "0", "left": "10px"} },
-    { "type": "inputDate", "value" : "", "style": { "border": "1px solid #cbd5e1", "padding": "8px", "borderRadius": "6px", "position": "absolute", "top": "0", "left": "10px" } },
-    { "type": "inputTime", "value": "12:00", "style": { "border": "1px solid #cbd5e1", "padding": "8px", "borderRadius": "6px", "position": "absolute", "top": "0", "left": "10px" } },
-    { "type": "divPannel", "style": { "width": "400px", "height": "300px", "minHeight": "50px", "border": "1px dashed #9ca3af", "backgroundColor": "#f8fafc", "borderRadius": "8px", "position": "absolute", "top": "0", "left": "10px" } },
-    { "type": "iframe", "src": "https://www.wikipedia.org", "style": { "width": "400px", "height": "300px", "border": "none", "position": "absolute", "top": "0", "left": "10px" } },
-    { "type": "ficheClient", "title": "Fiche Client", "style": { "width": "470px", "height": "400px", "border": "1px solid #e2e8f0", "borderRadius": "8px", "padding": "20px", "backgroundColor": "#f8fafc", "position": "absolute", "top": "0", "left": "10px" } },
+    { "type": "paragraphe", "value": "Votre texte ici...", "style": { "padding": "10px", "fontSize": "16px", "lineHeight": "1.5", "color": "#222" } },
+    { "type": "h1", "value": "Titre de niveau 1", "style": { "fontSize": "2.25rem", "fontWeight": "700", "color": "#1e293b" } },
+    { "type": "button", "value": "Cliquez ici", "style": { "backgroundColor": "#3b82f6", "color": "white", "border": "none", "padding": "12px 24px", "textAlign": "center", "fontSize": "16px", "borderRadius": "8px", "cursor": "pointer" } },
+    { "type": "input", "value": "", "attributes": { "type": "text", "placeholder": "Saisissez du texte" }, "style": { "padding": "8px", "border": "1px solid #cbd5e1", "borderRadius": "6px", "width": "200px" } },
+    { "type": "textarea", "value": "", "attributes": { "rows": 4, "placeholder": "Écrivez votre message..." }, "style": { "padding": "10px", "border": "1px solid #cbd5e1", "borderRadius": "6px", "width": "300px", "height": "100px" } },
+    { "type": "image", "src": "https://via.placeholder.com/300x200.png?text=Image", "alt": "placeholder image", "style": { "width": "300px", "height": "200px", "objectFit": "cover" } },
+    { "type": "select", "name": "listederoulante", "style": { "padding": "10px 12px", "border": "1px solid #d1d5db", "borderRadius": "6px", "width": "220px" }, "options": [ { "value": "option1", "label": "Option 1" }, { "value": "option2", "label": "Option 2" } ] },
+    { "type": "checkbox", "label": "Accepter les conditions", "checked": false, "style": {} },
+    { "type": "inputDate", "value" : "", "style": { "border": "1px solid #cbd5e1", "padding": "8px", "borderRadius": "6px" } },
+    { "type": "inputTime", "value": "12:00", "style": { "border": "1px solid #cbd5e1", "padding": "8px", "borderRadius": "6px" } },
+    { "type": "divPannel", "style": { "width": "400px", "height": "300px", "minHeight": "50px", "border": "1px dashed #9ca3af", "backgroundColor": "#f8fafc", "borderRadius": "8px" } },
+    { "type": "iframe", "src": "https://www.wikipedia.org", "style": { "width": "400px", "height": "300px", "border": "none" } },
+    { "type": "ficheClient", "title": "Fiche Client", "style": { "width": "470px", "height": "400px", "border": "1px solid #e2e8f0", "borderRadius": "8px", "padding": "20px", "backgroundColor": "#f8fafc" } },
+    { "type": "calculator", "style": { "width": "240px", "height": "360px", "backgroundColor": "#f1f5f9", "displayColor": "#e2e8f0", "displayTextColor": "#0f172a", "buttonColor": "#ffffff", "buttonTextColor": "#0f172a", "operatorColor": "#fefce8", "operatorTextColor": "#0f172a", "clearColor": "#fecaca", "clearTextColor": "#0f172a", "equalColor": "#2563eb", "equalTextColor": "#ffffff" } },
 ];
 
 // On transforme la liste en un format que notre application comprend.
@@ -29,14 +30,14 @@ const componentLibrary: ComponentLibraryItem[] = newTools.map(tool => {
         input: 'Keyboard', textarea: 'Textarea', image: 'Image',
         select: 'ChevronDownSquare', checkbox: 'CheckSquare', inputDate: 'Calendar',
         inputTime: 'Clock', divPannel: 'RectangleHorizontal', iframe: 'Globe',
-        ficheClient: 'UserSquare',
+        ficheClient: 'UserSquare', calculator: 'Calculator',
     };
-    
+
     // CORRECTION : Logique de nettoyage des styles plus robuste et sûre
     const originalStyle = tool.style || {};
     const cleanStyle: { [key: string]: any } = {};
     const forbiddenKeys = ['position', 'top', 'left', 'zIndex', 'margin', 'marginTop', 'marginRight', 'marginBottom', 'marginLeft'];
-    
+
     // On copie toutes les clés de style SAUF celles qui sont interdites
     for (const key in originalStyle) {
         if (!forbiddenKeys.includes(key)) {
@@ -50,7 +51,7 @@ const componentLibrary: ComponentLibraryItem[] = newTools.map(tool => {
         ...restOfTool,
         style: cleanStyle,
     };
-    
+
     return {
         id: tool.type,
         name: tool.type.charAt(0).toUpperCase() + tool.type.slice(1).replace(/_/g, ' '),
@@ -60,8 +61,8 @@ const componentLibrary: ComponentLibraryItem[] = newTools.map(tool => {
         defaultConfig: config,
         // On s'assure que parseInt ne reçoit jamais `undefined`
         defaultSize: {
-            width: parseInt(tool.style?.width || '0', 10) || 250,
-            height: parseInt(tool.style?.height || '0', 10) || (tool.type === 'textarea' ? 100 : 50),
+            width: parseInt(tool.style?.width || '0', 10) || (tool.type === 'calculator' ? 240 : 250),
+            height: parseInt(tool.style?.height || '0', 10) || (tool.type === 'calculator' ? 360 : (tool.type === 'textarea' ? 100 : 50)),
         },
     };
 });
@@ -71,9 +72,9 @@ const componentLibrary: ComponentLibraryItem[] = newTools.map(tool => {
 const DraggableComponent: React.FC<{ item: ComponentLibraryItem }> = ({ item }) => {
   const [{ isDragging }, drag] = useDrag(() => ({
     type: 'new-component',
-    item: { 
-      type: 'new-component', 
-      componentType: item.id, 
+    item: {
+      type: 'new-component',
+      componentType: item.id,
       config: item.defaultConfig,
       size: item.defaultSize
     },

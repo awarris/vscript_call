@@ -68,6 +68,9 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
       {(selectedComponent.type === 'paragraphe' || selectedComponent.type === 'h1' || selectedComponent.type === 'button') && (
          <TextareaInput label="Contenu" value={selectedComponent.config.value || ''} onChange={val => updateConfig({ value: val })} />
       )}
+       {selectedComponent.type === 'checkbox' && (
+         <TextareaInput label="Libellé" value={selectedComponent.config.label || ''} onChange={val => updateConfig({ label: val })} />
+      )}
       {selectedComponent.config.placeholder !== undefined && (
         <PropertyInput label="Placeholder" value={selectedComponent.config.placeholder || ''} onChange={val => updateConfig({ placeholder: val })} />
       )}
@@ -91,11 +94,11 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
         )}
     </>
   );
-  
+
   const renderTypographySection = () => {
     const style = selectedComponent.config.style || {};
     const fontSize = parseInt(String(style.fontSize || '16').replace('px', ''), 10);
-    
+
     return (
         <div className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
@@ -138,6 +141,28 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
     </div>
   );
 
+  const renderCalculatorStyles = () => (
+    <div className="space-y-4">
+        <h5 className="text-xs font-bold text-slate-500 uppercase tracking-wider">Couleurs Générales</h5>
+        <div className="grid grid-cols-2 gap-4">
+            <ColorInput label="Fond" value={selectedComponent.config.style?.backgroundColor || '#f1f5f9'} onChange={val => updateStyle({ backgroundColor: val })} />
+            <ColorInput label="Écran" value={selectedComponent.config.style?.displayColor || '#e2e8f0'} onChange={val => updateStyle({ displayColor: val })} />
+            <ColorInput label="Texte Écran" value={selectedComponent.config.style?.displayTextColor || '#0f172a'} onChange={val => updateStyle({ displayTextColor: val })} />
+        </div>
+        <h5 className="text-xs font-bold text-slate-500 uppercase tracking-wider mt-4">Couleurs des Boutons</h5>
+        <div className="grid grid-cols-2 gap-4">
+            <ColorInput label="Chiffres" value={selectedComponent.config.style?.buttonColor || '#ffffff'} onChange={val => updateStyle({ buttonColor: val })} />
+            <ColorInput label="Texte Chiffres" value={selectedComponent.config.style?.buttonTextColor || '#0f172a'} onChange={val => updateStyle({ buttonTextColor: val })} />
+            <ColorInput label="Opérateurs" value={selectedComponent.config.style?.operatorColor || '#fefce8'} onChange={val => updateStyle({ operatorColor: val })} />
+            <ColorInput label="Texte Opérateurs" value={selectedComponent.config.style?.operatorTextColor || '#0f172a'} onChange={val => updateStyle({ operatorTextColor: val })} />
+            <ColorInput label="Effacer (C)" value={selectedComponent.config.style?.clearColor || '#fecaca'} onChange={val => updateStyle({ clearColor: val })} />
+            <ColorInput label="Texte Effacer" value={selectedComponent.config.style?.clearTextColor || '#0f172a'} onChange={val => updateStyle({ clearTextColor: val })} />
+            <ColorInput label="Égal (=)" value={selectedComponent.config.style?.equalColor || '#2563eb'} onChange={val => updateStyle({ equalColor: val })} />
+            <ColorInput label="Texte Égal" value={selectedComponent.config.style?.equalTextColor || '#ffffff'} onChange={val => updateStyle({ equalTextColor: val })} />
+        </div>
+    </div>
+  )
+
   const renderLayoutSection = () => (
      <div className="grid grid-cols-2 gap-4">
         <NumberInput label="X" value={selectedComponent.position.x} onChange={val => updatePosition('x', val)} />
@@ -154,20 +179,22 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
         <p className="text-xs text-slate-500">ID: {selectedComponent.id.slice(-6)}</p>
       </div>
 
-      <Section title="Contenu" icon={Type}>
-        {renderContentSection()}
-      </Section>
-      
-      {(selectedComponent.type === 'paragraphe' || selectedComponent.type === 'textarea' || selectedComponent.type === 'text' || selectedComponent.type === 'h1' || selectedComponent.type === 'button') && (
+      {selectedComponent.type !== 'calculator' && (
+        <Section title="Contenu" icon={Type}>
+            {renderContentSection()}
+        </Section>
+      )}
+
+      {(['paragraphe', 'textarea', 'h1', 'button', 'checkbox'].includes(selectedComponent.type)) && (
         <Section title="Typographie" icon={Type}>
             {renderTypographySection()}
         </Section>
       )}
 
       <Section title="Apparence" icon={Palette}>
-        {renderAppearanceSection()}
+        {selectedComponent.type === 'calculator' ? renderCalculatorStyles() : renderAppearanceSection()}
       </Section>
-      
+
       <Section title="Disposition" icon={Settings}>
         {renderLayoutSection()}
       </Section>
@@ -235,14 +262,14 @@ const ColorInput: React.FC<{ label: string; value: string; onChange: (value: str
                 className="w-6 h-6 p-0 border-none rounded cursor-pointer bg-transparent"
                 style={{ appearance: 'none', WebkitAppearance: 'none' }}
             />
-            <input 
+            <input
                 type="text"
                 value={value.toUpperCase()}
                 onChange={(e) => onChange(e.target.value)}
                 className="w-full text-sm font-mono outline-none border-none focus:ring-0 bg-transparent"
                 onBlur={(e) => {
                     if (!/^#[0-9A-F]{6}$/i.test(e.target.value)) {
-                       onChange(value); 
+                       onChange(value);
                     }
                 }}
             />
@@ -260,4 +287,3 @@ const ToggleButton: React.FC<{ label: string; isActive: boolean; onClick: () => 
         {children}
     </button>
 );
-

@@ -1,264 +1,206 @@
-// chemin: vscript_call/src/components/panels/PropertiesPanel.tsx
+// chemin: vscript_call/src/pages/ScriptEditor.tsx
 
-import React from 'react';
-import { Settings, Palette, Type, Link2, AlignCenter, AlignLeft, AlignRight, Bold, Italic, Underline } from 'lucide-react';
-import { Component, ScriptPage, ComponentStyle } from '../types';
+import React, { useState, useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { DndProvider } from 'react-dnd';
+import { HTML5Backend } from 'react-dnd-html5-backend';
 
-interface PropertiesPanelProps {
-  selectedComponent?: Component | null;
-  onUpdateComponent: (id: string, updates: Partial<Component>) => void;
-  pages: ScriptPage[];
-  currentPageId: string;
-}
+import { useScriptsContext } from '../context/ScriptsContext';
+import { useHistoryState } from '../hooks/useHistoryState';
+import { Script, Component, ComponentConfig, ScriptPage } from '../types';
+import { generateId } from '../utils/helpers';
 
-export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
-  selectedComponent,
-  onUpdateComponent,
-  pages,
-  currentPageId,
-}) => {
-  if (!selectedComponent) {
-    return (
-      <div className="text-center py-12 text-slate-500">
-        <Settings className="h-12 w-12 mx-auto mb-4 opacity-30" />
-        <p className="text-sm font-medium">Aucun composant sélectionné</p>
-        <p className="text-xs mt-1">Sélectionnez un composant sur le canevas pour voir ses propriétés.</p>
-      </div>
-    );
+import { VerticalMenu } from '../components/layout/VerticalMenu';
+import { SidePanel } from '../components/layout/SidePanel';
+import { Toolbar } from '../components/Toolbar/Toolbar';
+import { Canvas } from '../components/Canvas/Canvas';
+import { LayersPanel } from '../components/panels/LayersPanel';
+import { PreviewPane } from '../components/PreviewPane/PreviewPane';
+
+import { ComponentPalette } from '../components/panels/ComponentPalette';
+import { PageManager } from '../components/panels/PageManager';
+import { WorkflowPanel } from '../components/panels/WorkflowPanel';
+import { VariablesPanel } from '../components/panels/VariablesPanel';
+import { PropertiesPanel } from '../components/panels/PropertiesPanel';
+
+export const ScriptEditor: React.FC = () => {
+  const { scriptId } = useParams<{ scriptId: string }>();
+  const navigate = useNavigate();
+  const { getScript, updateScript } = useScriptsContext();
+
+  const { state: script, setState: setScript, resetState, undo, redo, canUndo, canRedo } = useHistoryState<Script | null>(null);
+  
+  const [activePanel, setActivePanel] = useState('components');
+  const [currentPageId, setCurrentPageId] = useState<string>('');
+  const [selectedComponentId, setSelectedComponentId] = useState<string | null>(null);
+  const [device, setDevice] = useState<'mobile' | 'tablet' | 'desktop'>('desktop');
+  const [isPreviewMode, setIsPreviewMode] = useState(false);
+  const [inlineEditingId, setInlineEditingId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (scriptId) {
+      const foundScript = getScript(scriptId);
+      if (foundScript) {
+        resetState(foundScript);
+        const homePage = foundScript.pages.find(p => p.isHomePage) || foundScript.pages[0];
+        if (homePage) {
+          setCurrentPageId(homePage.id);
+        }
+      } else {
+        navigate('/');
+      }
+    }
+  }, [scriptId, getScript, navigate, resetState]);
+
+  // Sauvegarde automatique lors des modifications du script
+  useEffect(() => {
+    if (script && scriptId) {
+      updateScript(scriptId, script);
+    }
+  }, [script, scriptId, updateScript]);
+
+  const handleUpdateScript = (updates: Partial<Script>) => {
+    setScript(prev => prev ? { ...prev, ...updates } : null);
+  };
+  
+  const currentPage = script?.pages.find(p => p.id === currentPageId);
+  const componentsOnCurrentPage = script?.components.filter(c => c.pageId === currentPageId) || [];
+  const selectedComponent = script?.components.find(c => c.id === selectedComponentId) || null;
+
+  // Fonctions de manipulation des composants
+  const handleAddComponent = (type: string, config: ComponentConfig, size: {width: number, height: number}, position?: { x: number; y: number }): string => {
+    const newComponent: Component = {
+      id: generateId(),
+      type,
+      config,
+      position: position || { x: 50, y: 50 },
+      size,
+      pageId: currentPageId,
+    };
+    setScript(prev => prev ? { ...prev, components: [...prev.components, newComponent] } : null);
+    return newComponent.id;
+  };
+
+  const handleUpdateComponent = (id: string, updates: Partial<Component>) => {
+    setScript(prev => prev ? {
+      ...prev,
+      components: prev.components.map(c => c.id === id ? { ...c, ...updates } : c),
+    } : null);
+  };
+
+  const handleRemoveComponent = (id: string) => {
+    setScript(prev => prev ? {
+      ...prev,
+      components: prev.components.filter(c => c.id !== id),
+    } : null);
+    if (selectedComponentId === id) {
+      setSelectedComponentId(null);
+    }
+  };
+  
+  const handleDuplicateComponent = (id: string) => {
+    const componentToDuplicate = script?.components.find(c => c.id === id);
+    if (componentToDuplicate) {
+      const newComponent: Component = {
+        ...componentToDuplicate,
+        id: generateId(),
+        position: {
+          x: componentToDuplicate.position.x + 20,
+          y: componentToDuplicate.position.y + 20,
+        }
+      };
+      setScript(prev => prev ? { ...prev, components: [...prev.components, newComponent] } : null);
+      setSelectedComponentId(newComponent.id);
+    }
+  };
+  
+  const handleUpdatePage = (updates: Partial<ScriptPage>) => {
+    setScript(prev => prev ? {
+      ...prev,
+      pages: prev.pages.map(p => p.id === currentPageId ? { ...p, ...updates } : p)
+    } : null);
+  };
+
+  const handleImportScript = (importedScript: Script) => {
+    resetState(importedScript);
+    const homePage = importedScript.pages.find(p => p.isHomePage) || importedScript.pages[0];
+    if (homePage) {
+      setCurrentPageId(homePage.id);
+    }
+  };
+
+
+  if (!script) {
+    return <div>Chargement du script...</div>;
   }
 
-  // --- Fonctions utilitaires pour mettre à jour les propriétés ---
-
-  const updateConfig = (updates: Partial<Component['config']>) => {
-    onUpdateComponent(selectedComponent.id, {
-      config: { ...selectedComponent.config, ...updates },
-    });
+  const renderPanelContent = () => {
+    switch (activePanel) {
+      case 'components':
+        return <ComponentPalette onAddComponent={handleAddComponent} />;
+      case 'pages':
+        return <PageManager script={script} setScript={setScript} currentPageId={currentPageId} setCurrentPageId={setCurrentPageId} />;
+      case 'workflows':
+        return <WorkflowPanel script={script} setScript={setScript} currentPageId={currentPageId} />;
+      case 'variables':
+        return <VariablesPanel script={script} setScript={setScript} />;
+      case 'properties':
+        return <PropertiesPanel selectedComponent={selectedComponent} onUpdateComponent={handleUpdateComponent} pages={script.pages} currentPageId={currentPageId} />;
+      default:
+        return null;
+    }
   };
-
-  const updateStyle = (styleUpdates: Partial<ComponentStyle>) => {
-    onUpdateComponent(selectedComponent.id, {
-      config: {
-        ...selectedComponent.config,
-        style: { ...(selectedComponent.config.style || {}), ...styleUpdates },
-      },
-    });
-  };
-
-  const toggleStyle = (property: keyof React.CSSProperties, valueA: any, valueB: any) => {
-    const currentStyle = selectedComponent.config.style || {};
-    updateStyle({ [property]: currentStyle[property] === valueA ? valueB : valueA });
-  };
-
-  const updatePosition = (axis: 'x' | 'y', value: number) => {
-    onUpdateComponent(selectedComponent.id, {
-        position: { ...selectedComponent.position, [axis]: value }
-    });
-  };
-
-  const updateSize = (dim: 'width' | 'height', value: number) => {
-    onUpdateComponent(selectedComponent.id, {
-        size: { ...selectedComponent.size, [dim]: value }
-    });
-  };
-
-  // --- Rendu des sections de propriétés ---
-
-  const renderContentSection = () => (
-    <>
-      {/* MODIFICATION: Ajout de 'textarea' */}
-      {(selectedComponent.type === 'paragraphe' || selectedComponent.type === 'h1' || selectedComponent.type === 'button' || selectedComponent.type === 'textarea') && (
-         <TextareaInput label="Contenu" value={selectedComponent.config.value || ''} onChange={val => updateConfig({ value: val })} />
-      )}
-      {selectedComponent.config.placeholder !== undefined && (
-        <PropertyInput label="Placeholder" value={selectedComponent.config.placeholder || ''} onChange={val => updateConfig({ placeholder: val })} />
-      )}
-       {selectedComponent.type === 'button' && (
-            <div className="space-y-2 mt-4">
-                <label className="block text-xs font-semibold text-slate-700 flex items-center">
-                    <Link2 className="h-3 w-3 mr-1" />
-                    Page de destination
-                </label>
-                <select
-                    value={selectedComponent.config.targetPageId || ''}
-                    onChange={(e) => updateConfig({ targetPageId: e.target.value })}
-                    className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                    <option value="">Aucune navigation</option>
-                    {pages.filter(p => p.id !== currentPageId).map(page => (
-                        <option key={page.id} value={page.id}>{page.name}</option>
-                    ))}
-                </select>
-            </div>
-        )}
-    </>
-  );
-  
-  const renderTypographySection = () => {
-    const style = selectedComponent.config.style || {};
-    const fontSize = parseInt(String(style.fontSize || '16').replace('px', ''), 10);
-    
-    return (
-        <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-                <div className="col-span-2">
-                    <label className="block text-xs font-semibold text-slate-700 mb-1">Police</label>
-                    <select
-                        value={style.fontFamily || "'Inter', sans-serif"}
-                        onChange={e => updateStyle({ fontFamily: e.target.value })}
-                        className="w-full text-xs bg-white border border-slate-300 rounded-lg px-2 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    >
-                        <option value="'Inter', sans-serif">Inter</option>
-                        <option value="'Arial', sans-serif">Arial</option>
-                        <option value="'Georgia', serif">Georgia</option>
-                        <option value="'Courier New', monospace">Courier</option>
-                        <option value="'Times New Roman', serif">Times</option>
-                    </select>
-                </div>
-                <NumberInput label="Taille" value={isNaN(fontSize) ? 16 : fontSize} onChange={val => updateStyle({ fontSize: `${val}px` })} />
-                <ColorInput label="Couleur du texte" value={style.color || '#000000'} onChange={val => updateStyle({ color: val })} />
-            </div>
-             <div className="flex items-center space-x-2">
-                <ToggleButton label="Gras" isActive={style.fontWeight === 'bold'} onClick={() => toggleStyle('fontWeight', 'bold', 'normal')}><Bold size={16} /></ToggleButton>
-                <ToggleButton label="Italique" isActive={style.fontStyle === 'italic'} onClick={() => toggleStyle('fontStyle', 'italic', 'normal')}><Italic size={16} /></ToggleButton>
-                <ToggleButton label="Souligné" isActive={style.textDecoration === 'underline'} onClick={() => toggleStyle('textDecoration', 'underline', 'none')}><Underline size={16} /></ToggleButton>
-            </div>
-            <div className="flex items-center space-x-2">
-                <ToggleButton label="Gauche" isActive={!style.textAlign || style.textAlign === 'left'} onClick={() => updateStyle({ textAlign: 'left' })}><AlignLeft size={16} /></ToggleButton>
-                <ToggleButton label="Centre" isActive={style.textAlign === 'center'} onClick={() => updateStyle({ textAlign: 'center' })}><AlignCenter size={16} /></ToggleButton>
-                <ToggleButton label="Droite" isActive={style.textAlign === 'right'} onClick={() => updateStyle({ textAlign: 'right' })}><AlignRight size={16} /></ToggleButton>
-            </div>
-        </div>
-    );
-  };
-
-  const renderAppearanceSection = () => (
-    <div className="grid grid-cols-2 gap-4">
-        <ColorInput label="Fond" value={selectedComponent.config.style?.backgroundColor || '#ffffff'} onChange={val => updateStyle({ backgroundColor: val })} />
-        <NumberInput label="Arrondi" value={parseInt(String(selectedComponent.config.style?.borderRadius || '0').replace('px',''), 10)} onChange={val => updateStyle({ borderRadius: `${val}px` })} />
-        <NumberInput label="Padding" value={parseInt(String(selectedComponent.config.style?.padding || '0').replace('px',''), 10)} onChange={val => updateStyle({ padding: `${val}px` })} />
-    </div>
-  );
-
-  const renderLayoutSection = () => (
-     <div className="grid grid-cols-2 gap-4">
-        <NumberInput label="X" value={selectedComponent.position.x} onChange={val => updatePosition('x', val)} />
-        <NumberInput label="Y" value={selectedComponent.position.y} onChange={val => updatePosition('y', val)} />
-        <NumberInput label="Largeur" value={selectedComponent.size.width} onChange={val => updateSize('width', val)} />
-        <NumberInput label="Hauteur" value={selectedComponent.size.height} onChange={val => updateSize('height', val)} />
-    </div>
-  );
 
   return (
-    <div className="space-y-6">
-      <div className="p-3 bg-slate-50 rounded-lg border border-slate-200">
-        <h3 className="font-semibold text-slate-800">{selectedComponent.type}</h3>
-        <p className="text-xs text-slate-500">ID: {selectedComponent.id.slice(-6)}</p>
+    <DndProvider backend={HTML5Backend}>
+      <div className="h-screen w-screen flex flex-col bg-slate-100">
+        <Toolbar
+          script={script}
+          onUpdateScript={handleUpdateScript}
+          onImportScript={handleImportScript}
+          isPreviewMode={isPreviewMode}
+          onTogglePreview={() => setIsPreviewMode(!isPreviewMode)}
+          currentDevice={device}
+          onDeviceChange={setDevice}
+          undo={undo}
+          redo={redo}
+          canUndo={canUndo}
+          canRedo={canRedo}
+        />
+        <div className="flex-1 flex overflow-hidden">
+          <VerticalMenu activePanel={activePanel} setActivePanel={setActivePanel} />
+          <SidePanel activePanel={activePanel}>
+            {renderPanelContent()}
+          </SidePanel>
+
+          {isPreviewMode ? (
+            <PreviewPane script={script} currentPageId={currentPageId} device={device} onNavigateToPage={setCurrentPageId} />
+          ) : (
+            <>
+              <Canvas
+                components={componentsOnCurrentPage}
+                onUpdateComponent={handleUpdateComponent}
+                onRemoveComponent={handleRemoveComponent}
+                onDuplicateComponent={handleDuplicateComponent}
+                selectedComponentId={selectedComponentId}
+                onSelectComponent={setSelectedComponentId}
+                device={device}
+                onAddComponent={handleAddComponent}
+                currentPage={currentPage}
+                onUpdatePage={handleUpdatePage}
+                inlineEditingId={inlineEditingId}
+                setInlineEditingId={setInlineEditingId}
+              />
+              <LayersPanel
+                components={componentsOnCurrentPage}
+                selectedComponentId={selectedComponentId}
+                onSelectComponent={setSelectedComponentId}
+                onRemoveComponent={handleRemoveComponent}
+              />
+            </>
+          )}
+        </div>
       </div>
-
-      <Section title="Contenu" icon={Type}>
-        {renderContentSection()}
-      </Section>
-      
-      {/* MODIFICATION: Ajout de 'textarea' */}
-      {(selectedComponent.type === 'paragraphe' || selectedComponent.type === 'h1' || selectedComponent.type === 'button' || selectedComponent.type === 'textarea') && (
-        <Section title="Typographie" icon={Type}>
-            {renderTypographySection()}
-        </Section>
-      )}
-
-      <Section title="Apparence" icon={Palette}>
-        {renderAppearanceSection()}
-      </Section>
-      
-      <Section title="Disposition" icon={Settings}>
-        {renderLayoutSection()}
-      </Section>
-    </div>
+    </DndProvider>
   );
 };
-
-
-// --- Sous-composants pour les champs de propriétés ---
-
-const Section: React.FC<{ title: string; icon: React.ElementType; children: React.ReactNode }> = ({ title, icon: Icon, children }) => (
-  <div>
-    <h4 className="text-sm font-semibold text-slate-900 mb-3 flex items-center">
-      <Icon className="h-4 w-4 mr-2 text-slate-500" />
-      {title}
-    </h4>
-    <div className="space-y-3">{children}</div>
-  </div>
-);
-
-const PropertyInput: React.FC<{ label: string; value: string; onChange: (value: string) => void }> = ({ label, value, onChange }) => (
-    <div>
-        <label className="block text-xs font-semibold text-slate-700 mb-1">{label}</label>
-        <input
-            type="text"
-            value={value}
-            onChange={(e) => onChange(e.target.value)}
-            className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-        />
-    </div>
-);
-
-const TextareaInput: React.FC<{ label: string; value: string; onChange: (value: string) => void }> = ({ label, value, onChange }) => (
-    <div>
-        <label className="block text-xs font-semibold text-slate-700 mb-1">{label}</label>
-        <textarea
-            value={value}
-            onChange={(e) => onChange(e.target.value)}
-            className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 h-24 resize-none"
-        />
-    </div>
-);
-
-
-const NumberInput: React.FC<{ label: string; value: number; onChange: (value: number) => void }> = ({ label, value, onChange }) => (
-    <div>
-        <label className="block text-xs font-semibold text-slate-700 mb-1">{label}</label>
-        <input
-            type="number"
-            value={value}
-            onChange={(e) => onChange(parseInt(e.target.value, 10) || 0)}
-            className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-        />
-    </div>
-);
-
-const ColorInput: React.FC<{ label: string; value: string; onChange: (value: string) => void }> = ({ label, value, onChange }) => (
-    <div>
-        <label className="block text-xs font-semibold text-slate-700 mb-1">{label}</label>
-        <div className="flex items-center h-10 space-x-2 border border-slate-300 rounded-lg px-2">
-            <input
-                type="color"
-                value={value}
-                onChange={(e) => onChange(e.target.value)}
-                className="w-6 h-6 p-0 border-none rounded cursor-pointer bg-transparent"
-                style={{ appearance: 'none', WebkitAppearance: 'none' }}
-            />
-            <input 
-                type="text"
-                value={value.toUpperCase()}
-                onChange={(e) => onChange(e.target.value)}
-                className="w-full text-sm font-mono outline-none border-none focus:ring-0 bg-transparent"
-                onBlur={(e) => {
-                    if (!/^#[0-9A-F]{6}$/i.test(e.target.value)) {
-                       onChange(value); 
-                    }
-                }}
-            />
-        </div>
-    </div>
-);
-
-
-const ToggleButton: React.FC<{ label: string; isActive: boolean; onClick: () => void; children: React.ReactNode }> = ({ label, isActive, onClick, children }) => (
-    <button
-        title={label}
-        onClick={onClick}
-        className={`p-2 rounded-lg transition-colors ${isActive ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
-    >
-        {children}
-    </button>
-);

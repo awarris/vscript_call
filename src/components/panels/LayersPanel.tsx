@@ -24,7 +24,7 @@ export const LayersPanel: React.FC<LayersPanelProps> = ({
     input: 'Keyboard', textarea: 'Textarea', image: 'Image',
     select: 'ChevronDownSquare', checkbox: 'CheckSquare', inputDate: 'Calendar',
     inputTime: 'Clock', divPannel: 'RectangleHorizontal', iframe: 'Globe',
-    ficheClient: 'UserSquare',
+    ficheClient: 'UserSquare', calculator: 'Calculator',
   };
 
   return (

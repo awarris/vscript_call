@@ -5,6 +5,18 @@
  */
 export interface ComponentStyle {
   [key: string]: any;
+  // Styles spécifiques pour la calculatrice
+  backgroundColor?: string;
+  displayColor?: string;
+  displayTextColor?: string;
+  buttonColor?: string;
+  buttonTextColor?: string;
+  operatorColor?: string;
+  operatorTextColor?: string;
+  clearColor?: string;
+  clearTextColor?: string;
+  equalColor?: string;
+  equalTextColor?: string;
 }
 
 /**
