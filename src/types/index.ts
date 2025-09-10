@@ -68,9 +68,12 @@ export interface WorkflowCondition {
   value: any;
 }
 
+// MISE À JOUR : Ajout de 'executeCode' au type d'action et 'code' à la configuration
+export type WorkflowActionType = 'navigate' | 'setVariable' | 'showMessage' | 'executeCode';
+
 export interface WorkflowAction {
   id: string;
-  type: 'navigate' | 'setVariable' | 'showMessage';
+  type: WorkflowActionType;
   config: {
     pageId?: string;
     variableId?: string;
@@ -80,8 +83,10 @@ export interface WorkflowAction {
       property: 'value';
     };
     message?: string;
+    code?: string; // Pour l'action 'executeCode'
   };
 }
+
 
 export interface WorkflowRule {
   id: string;

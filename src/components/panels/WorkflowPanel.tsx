@@ -1,8 +1,8 @@
 // chemin: vscript_call/src/components/panels/WorkflowPanel.tsx
 
 import React, { useState, useMemo } from 'react';
-import { Plus, Trash2, Zap, Settings, ArrowLeft } from 'lucide-react';
-import { Script, WorkflowRule, WorkflowTriggerType, WorkflowAction, Component, ScriptPage } from '../../types';
+import { Plus, Trash2, Zap, Settings, ArrowLeft, Code } from 'lucide-react';
+import { Script, WorkflowRule, WorkflowTriggerType, WorkflowAction, Component, ScriptPage, WorkflowActionType } from '../../types';
 import { generateId } from '../../utils/helpers';
 
 // Props du composant principal
@@ -48,10 +48,10 @@ const componentEventMap: Record<string, { type: WorkflowTriggerType; label: stri
 
 const pageLoadEvent = { type: 'onPageLoad', label: 'Au chargement de la page' };
 
-const availableActions = [
+const availableActions: { type: WorkflowActionType; label: string }[] = [
   { type: 'navigate', label: 'Naviguer vers...' },
   { type: 'showMessage', label: 'Afficher un message' },
-  // Ajoutez d'autres types d'actions ici
+  { type: 'executeCode', label: 'Exécuter du code' },
 ];
 
 // L'éditeur de workflow
@@ -66,18 +66,15 @@ const WorkflowEditor: React.FC<WorkflowEditorProps> = ({ rule, onSave, onCancel,
     const component = componentsOnPage.find(c => c.id === currentRule.trigger.componentId);
     const componentType = component?.type || 'default';
     
-    // Pour les types input, textarea, etc., on utilise leur mapping spécifique
     if (['input', 'textarea', 'select', 'checkbox'].includes(componentType)) {
         return componentEventMap[componentType];
     }
     
-    // Sinon, on utilise le mapping par défaut
     return componentEventMap.default;
   }, [currentRule.trigger.componentId, componentsOnPage]);
 
   const handleTriggerComponentChange = (componentId: string) => {
     if (componentId === 'page') {
-        // Cas spécial pour le chargement de la page
         setCurrentRule(prev => ({ ...prev, trigger: { type: 'onPageLoad', componentId: undefined } }));
     } else {
         const selectedComponent = componentsOnPage.find(c => c.id === componentId);
@@ -88,7 +85,6 @@ const WorkflowEditor: React.FC<WorkflowEditorProps> = ({ rule, onSave, onCancel,
             trigger: {
                 ...prev.trigger,
                 componentId,
-                // Réinitialise le type de trigger au premier disponible pour ce composant
                 type: newAvailableTriggers[0].type
             }
         }));
@@ -118,7 +114,7 @@ const WorkflowEditor: React.FC<WorkflowEditorProps> = ({ rule, onSave, onCancel,
     setCurrentRule(prev => ({...prev, actions: prev.actions.filter((_, i) => i !== index)}));
   }
 
-  const handleActionTypeChange = (index: number, newType: 'navigate' | 'showMessage') => {
+  const handleActionTypeChange = (index: number, newType: WorkflowActionType) => {
     const newActions = [...currentRule.actions];
     newActions[index] = { ...newActions[index], type: newType, config: {} }; // Réinitialise la config
     setCurrentRule(prev => ({...prev, actions: newActions}));
@@ -185,6 +181,17 @@ const WorkflowEditor: React.FC<WorkflowEditorProps> = ({ rule, onSave, onCancel,
             )}
             {action.type === 'showMessage' && (
                 <input type="text" placeholder="Votre message..." value={action.config.message || ''} onChange={(e) => handleActionChange(index, 'message', e.target.value)} className="w-full mt-1 px-3 py-2 text-sm border border-slate-300 rounded-lg"/>
+            )}
+            {action.type === 'executeCode' && (
+                <div className="relative">
+                    <Code size={14} className="absolute top-2.5 left-2 text-slate-400" />
+                    <textarea 
+                        placeholder="/* Votre code JavaScript ici... */" 
+                        value={action.config.code || ''} 
+                        onChange={(e) => handleActionChange(index, 'code', e.target.value)} 
+                        className="w-full mt-1 pl-7 pr-2 py-2 text-sm font-mono border border-slate-300 rounded-lg h-32 resize-y"
+                    />
+                </div>
             )}
           </div>
         ))}
