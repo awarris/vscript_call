@@ -23,6 +23,27 @@ import { WorkflowPanel } from '../components/panels/WorkflowPanel';
 import { VariablesPanel } from '../components/panels/VariablesPanel';
 import { PropertiesPanel } from '../components/panels/PropertiesPanel';
 
+// --- UTILS ---
+const isObject = (item: any): item is object => {
+  return (item && typeof item === 'object' && !Array.isArray(item));
+};
+
+const mergeDeep = <T extends object>(target: T, source: Partial<T>): T => {
+  const output = { ...target };
+  if (isObject(target) && isObject(source)) {
+    Object.keys(source).forEach(key => {
+      const sourceKey = key as keyof T;
+      if (isObject(source[sourceKey]) && sourceKey in target && isObject(target[sourceKey])) {
+        output[sourceKey] = mergeDeep(target[sourceKey] as object, source[sourceKey] as object) as T[keyof T];
+      } else {
+        output[sourceKey] = source[sourceKey] as T[keyof T];
+      }
+    });
+  }
+  return output;
+};
+
+
 export const ScriptEditor: React.FC = () => {
   const { scriptId } = useParams<{ scriptId: string }>();
   const navigate = useNavigate();
@@ -81,7 +102,9 @@ export const ScriptEditor: React.FC = () => {
           if (!prev) return null;
           return {
               ...prev,
-              components: prev.components.map(c => c.id === id ? { ...c, ...updates } : c),
+              components: prev.components.map(c => 
+                c.id === id ? mergeDeep(c, updates) : c
+              ),
           };
       });
   };
@@ -109,12 +132,10 @@ export const ScriptEditor: React.FC = () => {
   const handleRemoveComponent = (id: string) => {
     if (!script) return;
 
-    // Correction: 'idsToRemove' est maintenant défini dans la portée de la fonction entière
     const idsToRemove = new Set<string>([id]);
     let changed = true;
     while (changed) {
         changed = false;
-        // On utilise script.components car c'est l'état le plus récent disponible ici
         script.components.forEach(c => {
             if (c.parentId && idsToRemove.has(c.parentId) && !idsToRemove.has(c.id)) {
                 idsToRemove.add(c.id);
@@ -201,6 +222,7 @@ export const ScriptEditor: React.FC = () => {
                 onUpdatePage={handleUpdatePage}
                 inlineEditingId={inlineEditingId}
                 setInlineEditingId={setInlineEditingId}
+                allComponents={script.components}
               />
               <LayersPanel
                 components={componentsOnCurrentPage}
