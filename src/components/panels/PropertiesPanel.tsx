@@ -1,7 +1,7 @@
 // chemin: vscript_call/src/components/panels/PropertiesPanel.tsx
 
 import React from 'react';
-import { Settings, Palette, Type, Link2, AlignCenter, AlignLeft, AlignRight, Bold, Italic, Underline, Globe } from 'lucide-react';
+import { Settings, Palette, Type, Link2, AlignCenter, AlignLeft, AlignRight, Bold, Italic, Underline, Globe, Image as ImageIcon } from 'lucide-react';
 import { Component, ScriptPage, ComponentStyle } from '../../types';
 
 interface PropertiesPanelProps {
@@ -27,7 +27,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
     );
   }
 
-  // --- Fonctions utilitaires pour mettre à jour les propriétés ---
+  // --- Fonctions utilitaires ---
 
   const updateConfig = (updates: Partial<Component['config']>) => {
     onUpdateComponent(selectedComponent.id, {
@@ -43,6 +43,11 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
       },
     });
   };
+
+    const updateBorderStyle = (property: 'borderStyle' | 'borderColor' | 'borderWidth', value: any) => {
+        updateStyle({ [property]: value });
+    };
+
 
   const toggleStyle = (property: keyof React.CSSProperties, valueA: any, valueB: any) => {
     const currentStyle = selectedComponent.config.style || {};
@@ -61,15 +66,15 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
     });
   };
 
-  // --- Rendu des sections de propriétés ---
+  // --- Sections de propriétés ---
 
   const renderContentSection = () => (
     <>
-      {(selectedComponent.type === 'paragraphe' || selectedComponent.type === 'h1' || selectedComponent.type === 'button') && (
+      {(['paragraphe', 'h1', 'button'].includes(selectedComponent.type)) && (
          <TextareaInput label="Contenu" value={selectedComponent.config.value || ''} onChange={val => updateConfig({ value: val })} />
       )}
        {selectedComponent.type === 'checkbox' && (
-         <TextareaInput label="Libellé" value={selectedComponent.config.label || ''} onChange={val => updateConfig({ label: val })} />
+         <PropertyInput label="Libellé" value={selectedComponent.config.label || ''} onChange={val => updateConfig({ label: val })} />
       )}
       {selectedComponent.config.placeholder !== undefined && (
         <PropertyInput label="Placeholder" value={selectedComponent.config.placeholder || ''} onChange={val => updateConfig({ placeholder: val })} />
@@ -94,18 +99,34 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
         )}
     </>
   );
+  
+    const renderImageContentSection = () => (
+        <div className="space-y-4">
+            <PropertyInput
+                label="URL de l'image (src)"
+                value={selectedComponent.config.src || ''}
+                onChange={val => updateConfig({ src: val })}
+            />
+            <PropertyInput
+                label="Texte alternatif (alt)"
+                value={selectedComponent.config.alt || ''}
+                onChange={val => updateConfig({ alt: val })}
+            />
+        </div>
+    );
+
 
   const renderIframeSection = () => (
     <div className="space-y-4">
       <PropertyInput
         label="URL de la source (src)"
         value={selectedComponent.config.src || ''}
-        onChange={val => updateConfig({ src: val, htmlContent: '' })} // On vide le htmlContent si on met une URL
+        onChange={val => updateConfig({ src: val, htmlContent: '' })}
       />
       <TextareaInput
         label="Contenu HTML direct"
         value={selectedComponent.config.htmlContent || ''}
-        onChange={val => updateConfig({ htmlContent: val, src: '' })} // On vide la src si on met du HTML
+        onChange={val => updateConfig({ htmlContent: val, src: '' })}
       />
     </div>
   );
@@ -147,6 +168,52 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
         </div>
     );
   };
+    const renderImageAppearanceSection = () => {
+        const style = selectedComponent.config.style || {};
+        return (
+            <div className="space-y-4">
+                <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">Ajustement</label>
+                    <select
+                        value={style.objectFit || 'cover'}
+                        onChange={e => updateStyle({ objectFit: e.target.value })}
+                        className="w-full text-xs bg-white border border-slate-300 rounded-lg px-2 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                        <option value="cover">Remplir (Cover)</option>
+                        <option value="contain">Contenir (Contain)</option>
+                        <option value="fill">Étirer (Fill)</option>
+                        <option value="none">Aucun (None)</option>
+                        <option value="scale-down">Réduire (Scale Down)</option>
+                    </select>
+                </div>
+                <NumberInput label="Opacité (%)" value={(style.opacity || 1) * 100} onChange={val => updateStyle({ opacity: val / 100 })} />
+                <NumberInput label="Arrondi (px)" value={parseInt(String(style.borderRadius || '0').replace('px', ''), 10)} onChange={val => updateStyle({ borderRadius: `${val}px` })} />
+                
+                <div>
+                    <h5 className="text-xs font-bold text-slate-500 uppercase tracking-wider mt-4 mb-2">Bordure</h5>
+                    <div className="grid grid-cols-2 gap-4">
+                        <NumberInput label="Épaisseur (px)" value={parseInt(String(style.borderWidth || '0').replace('px', ''), 10)} onChange={val => updateBorderStyle('borderWidth', `${val}px`)} />
+                        <ColorInput label="Couleur" value={style.borderColor || '#000000'} onChange={val => updateBorderStyle('borderColor', val)} />
+                        <div className="col-span-2">
+                             <label className="block text-xs font-semibold text-slate-700 mb-1">Style</label>
+                            <select
+                                value={style.borderStyle || 'none'}
+                                onChange={e => updateBorderStyle('borderStyle', e.target.value)}
+                                className="w-full text-xs bg-white border border-slate-300 rounded-lg px-2 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            >
+                                <option value="none">Aucun</option>
+                                <option value="solid">Solide</option>
+                                <option value="dashed">Tirets</option>
+                                <option value="dotted">Pointillés</option>
+                                <option value="double">Double</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        );
+    };
+
 
   const renderAppearanceSection = () => (
     <div className="grid grid-cols-2 gap-4">
@@ -194,10 +261,16 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
         <p className="text-xs text-slate-500">ID: {selectedComponent.id.slice(-6)}</p>
       </div>
 
-      {selectedComponent.type !== 'calculator' && selectedComponent.type !== 'iframe' && (
+      {['paragraphe', 'h1', 'button', 'input', 'textarea', 'checkbox'].includes(selectedComponent.type) && (
         <Section title="Contenu" icon={Type}>
             {renderContentSection()}
         </Section>
+      )}
+
+      {selectedComponent.type === 'image' && (
+          <Section title="Contenu de l'image" icon={ImageIcon}>
+              {renderImageContentSection()}
+          </Section>
       )}
       
       {selectedComponent.type === 'iframe' && (
@@ -213,7 +286,9 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
       )}
 
       <Section title="Apparence" icon={Palette}>
-        {selectedComponent.type === 'calculator' ? renderCalculatorStyles() : renderAppearanceSection()}
+        {selectedComponent.type === 'calculator' && renderCalculatorStyles()}
+        {selectedComponent.type === 'image' && renderImageAppearanceSection()}
+        {!['calculator', 'image'].includes(selectedComponent.type) && renderAppearanceSection()}
       </Section>
 
       <Section title="Disposition" icon={Settings}>
@@ -224,7 +299,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
 };
 
 
-// --- Sous-composants pour les champs de propriétés ---
+// --- Sous-composants ---
 
 const Section: React.FC<{ title: string; icon: React.ElementType; children: React.ReactNode }> = ({ title, icon: Icon, children }) => (
   <div>
