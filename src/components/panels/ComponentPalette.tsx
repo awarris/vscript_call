@@ -12,7 +12,7 @@ const newTools = [
   { "type": "button", "value": "Cliquez ici", "style": { "backgroundColor": "#3b82f6", "color": "white", "border": "none", "padding": "12px 24px", "textAlign": "center", "fontSize": "16px", "borderRadius": "8px", "cursor": "pointer" } },
   { "type": "input", "value": "", "attributes": { "type": "text", "placeholder": "Saisissez du texte" }, "style": { "padding": "8px", "border": "1px solid #cbd5e1", "borderRadius": "6px", "width": "200px" } },
   { "type": "textarea", "value": "", "attributes": { "rows": 4, "placeholder": "Écrivez votre message..." }, "style": { "padding": "10px", "border": "1px solid #cbd5e1", "borderRadius": "6px", "width": "300px", "height": "100px" } },
-  { "type": "image", "src": "https://via.placeholder.com/300x200.png?text=Image", "alt": "placeholder image", "style": { "width": "300px", "height": "200px", "objectFit": "cover" } },
+  { "type": "image", "src": "https://picsum.photos/200/300", "alt": "placeholder image", "style": { "width": "300px", "height": "200px", "objectFit": "cover" } },
   { "type": "select", "name": "listederoulante", "style": { "padding": "10px 12px", "border": "1px solid #d1d5db", "borderRadius": "6px", "width": "220px" }, "options": [{ "value": "option1", "label": "Option 1" }, { "value": "option2", "label": "Option 2" }] },
   { "type": "checkbox", "label": "Accepter les conditions", "checked": false, "style": {} },
   { "type": "inputDate", "value": "", "style": { "border": "1px solid #cbd5e1", "padding": "8px", "borderRadius": "6px" } },
