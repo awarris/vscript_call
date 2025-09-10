@@ -1,6 +1,6 @@
 // chemin: vscript_call/src/components/panels/WorkflowPanel.tsx
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Plus, Trash2, Zap, Settings, ArrowLeft } from 'lucide-react';
 import { Script, WorkflowRule, WorkflowTriggerType, WorkflowAction, Component, ScriptPage } from '../../types';
 import { generateId } from '../../utils/helpers';
@@ -22,14 +22,31 @@ interface WorkflowEditorProps {
   pages: ScriptPage[];
 }
 
-const availableTriggers: { type: WorkflowTriggerType; label: string }[] = [
-  { type: 'onClick', label: 'Au clic' },
-  { type: 'onDoubleClick', label: 'Au double-clic' },
-  { type: 'onMouseEnter', label: 'Souris entre' },
-  { type: 'onMouseLeave', label: 'Souris sort' },
-  { type: 'onChange', label: 'Au changement' },
-  { type: 'onPageLoad', label: 'Chargement de la page' },
-];
+// --- Définition des événements disponibles par type de composant ---
+const componentEventMap: Record<string, { type: WorkflowTriggerType; label: string }[]> = {
+  default: [
+    { type: 'onClick', label: 'Au clic' },
+    { type: 'onDoubleClick', label: 'Au double-clic' },
+    { type: 'onMouseEnter', label: 'La souris entre' },
+    { type: 'onMouseLeave', label: 'La souris sort' },
+  ],
+  input: [
+    { type: 'onChange', label: 'Quand la valeur change' },
+    { type: 'onClick', label: 'Au clic' },
+  ],
+  textarea: [
+    { type: 'onChange', label: 'Quand la valeur change' },
+    { type: 'onClick', label: 'Au clic' },
+  ],
+  select: [
+    { type: 'onChange', label: 'Quand une option est sélectionnée' },
+  ],
+  checkbox: [
+    { type: 'onChange', label: 'Quand la case est cochée/décochée' },
+  ]
+};
+
+const pageLoadEvent = { type: 'onPageLoad', label: 'Au chargement de la page' };
 
 const availableActions = [
   { type: 'navigate', label: 'Naviguer vers...' },
@@ -41,8 +58,45 @@ const availableActions = [
 const WorkflowEditor: React.FC<WorkflowEditorProps> = ({ rule, onSave, onCancel, onDelete, componentsOnPage, pages }) => {
   const [currentRule, setCurrentRule] = useState(rule);
 
-  const handleTriggerChange = (field: keyof WorkflowRule['trigger'], value: any) => {
-    setCurrentRule(prev => ({ ...prev, trigger: { ...prev.trigger, [field]: value } }));
+  // Détermine les événements disponibles en fonction du composant sélectionné
+  const availableTriggers = useMemo(() => {
+    if (!currentRule.trigger.componentId) {
+      return [pageLoadEvent];
+    }
+    const component = componentsOnPage.find(c => c.id === currentRule.trigger.componentId);
+    const componentType = component?.type || 'default';
+    
+    // Pour les types input, textarea, etc., on utilise leur mapping spécifique
+    if (['input', 'textarea', 'select', 'checkbox'].includes(componentType)) {
+        return componentEventMap[componentType];
+    }
+    
+    // Sinon, on utilise le mapping par défaut
+    return componentEventMap.default;
+  }, [currentRule.trigger.componentId, componentsOnPage]);
+
+  const handleTriggerComponentChange = (componentId: string) => {
+    if (componentId === 'page') {
+        // Cas spécial pour le chargement de la page
+        setCurrentRule(prev => ({ ...prev, trigger: { type: 'onPageLoad', componentId: undefined } }));
+    } else {
+        const selectedComponent = componentsOnPage.find(c => c.id === componentId);
+        const newAvailableTriggers = componentEventMap[selectedComponent?.type || 'default'] || componentEventMap.default;
+
+        setCurrentRule(prev => ({
+            ...prev,
+            trigger: {
+                ...prev.trigger,
+                componentId,
+                // Réinitialise le type de trigger au premier disponible pour ce composant
+                type: newAvailableTriggers[0].type
+            }
+        }));
+    }
+};
+
+  const handleTriggerTypeChange = (type: WorkflowTriggerType) => {
+    setCurrentRule(prev => ({ ...prev, trigger: { ...prev.trigger, type } }));
   };
   
   const handleActionChange = (index: number, field: keyof WorkflowAction['config'], value: any) => {
@@ -91,23 +145,25 @@ const WorkflowEditor: React.FC<WorkflowEditorProps> = ({ rule, onSave, onCancel,
       {/* Déclencheur */}
       <div className="p-3 bg-slate-50 border rounded-lg space-y-2">
         <h3 className="font-semibold text-slate-800">Quand... (Déclencheur)</h3>
+        
+        <label className="text-xs font-medium text-slate-600">L'événement se produit sur :</label>
+        <select
+          value={currentRule.trigger.componentId || 'page'}
+          onChange={(e) => handleTriggerComponentChange(e.target.value)}
+          className="w-full px-2 py-1.5 text-sm border bg-white border-slate-300 rounded-md"
+        >
+          <option value="page">La Page (chargement)</option>
+          {componentsOnPage.map(c => <option key={c.id} value={c.id}>{c.type} ({c.id.slice(-4)})</option>)}
+        </select>
+
+        <label className="text-xs font-medium text-slate-600">Le type d'événement est :</label>
         <select
           value={currentRule.trigger.type}
-          onChange={(e) => handleTriggerChange('type', e.target.value)}
+          onChange={(e) => handleTriggerTypeChange(e.target.value as WorkflowTriggerType)}
           className="w-full px-2 py-1.5 text-sm border bg-white border-slate-300 rounded-md"
         >
           {availableTriggers.map(t => <option key={t.type} value={t.type}>{t.label}</option>)}
         </select>
-        {currentRule.trigger.type !== 'onPageLoad' && (
-          <select
-            value={currentRule.trigger.componentId || ''}
-            onChange={(e) => handleTriggerChange('componentId', e.target.value)}
-            className="w-full px-2 py-1.5 text-sm border bg-white border-slate-300 rounded-md"
-          >
-            <option value="">Sélectionner un composant</option>
-            {componentsOnPage.map(c => <option key={c.id} value={c.id}>{c.type} ({c.id.slice(-4)})</option>)}
-          </select>
-        )}
       </div>
 
       {/* Actions */}
@@ -162,7 +218,7 @@ export const WorkflowPanel: React.FC<WorkflowPanelProps> = ({ script, setScript,
       id: generateId(),
       name: `Nouveau Workflow ${workflowsOnPage.length + 1}`,
       pageId: currentPageId,
-      trigger: { type: 'onClick' },
+      trigger: { type: 'onPageLoad' }, // Par défaut, on commence avec un événement de page
       conditions: [],
       actions: [],
     };
