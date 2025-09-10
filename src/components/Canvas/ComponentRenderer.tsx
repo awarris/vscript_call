@@ -3,8 +3,8 @@
 import React, { useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import {
-    Bold, Italic, Underline, Strikethrough, AlignLeft, AlignCenter, AlignRight,
-    X, Copy, Trash2, Palette, Delete
+    Bold, Italic, Underline, AlignLeft, AlignCenter, AlignRight,
+    X, Copy, Trash2, Palette, Delete, Calendar, Clock
 } from 'lucide-react';
 import { Component, ComponentStyle } from '../../types';
 
@@ -137,7 +137,15 @@ export const ComponentRenderer: React.FC<ComponentRendererProps> = (props) => {
     switch (component.type) {
       case 'paragraphe': case 'h1': return <div style={{...style, pointerEvents: 'none'}}>{String(component.config.value || '')}</div>;
       case 'button': return <button style={{ ...style, pointerEvents: 'none' }}>{String(component.config.value || '')}</button>;
-      case 'input': case 'inputDate': case 'inputTime': return <input {...component.config.attributes} style={style} readOnly />;
+      case 'input': return <input {...component.config.attributes} style={style} readOnly />;
+      case 'inputDate':
+      case 'inputTime':
+        return (
+          <div style={{...style, display: 'flex', alignItems: 'center', justifyContent: 'space-between', pointerEvents: 'none', paddingRight: '8px' }}>
+              <span style={{flex: 1}}>{component.type === 'inputDate' ? 'Date' : 'Heure'}</span>
+              {component.type === 'inputDate' ? <Calendar size={16} className="text-slate-400" /> : <Clock size={16} className="text-slate-400" />}
+          </div>
+        );
       case 'textarea': return <textarea {...component.config.attributes} value={String(component.config.value || '')} style={style} readOnly />;
       case 'image': return <img src={component.config.src} alt={component.config.alt} style={style} />;
       case 'iframe':
@@ -152,12 +160,10 @@ export const ComponentRenderer: React.FC<ComponentRendererProps> = (props) => {
       case 'checkbox': return <div style={{ ...style, display: 'flex', alignItems: 'center', pointerEvents: 'none' }}> <input type="checkbox" checked={component.config.checked} readOnly style={{ marginRight: '8px' }} /> <span style={{ color: component.config.style?.color, fontFamily: component.config.style?.fontFamily }}> {component.config.label} </span> </div>;
       case 'calculator': return <div style={{ pointerEvents: 'none' }}><StaticCalculator styleConfig={component.config.style as ComponentStyle} /></div>;
       case 'container':
-        // CORRECTION : S'assurer que 'allComponents' est bien défini avant de l'utiliser.
         const children = allComponents ? allComponents.filter(c => c.parentId === component.id) : [];
         return (
           <div style={{ ...style, position: 'relative' }}>
             {children.map(child => (
-              // LE FIX EST ICI: On passe explicitement TOUTES les props nécessaires.
               <ComponentRenderer
                 key={child.id}
                 component={child}
@@ -199,36 +205,42 @@ export const ComponentRenderer: React.FC<ComponentRendererProps> = (props) => {
         x: component.position.x,
         y: component.position.y,
         width: component.size.width,
-        height: isEditingInline ? 'auto' : component.size.height,
-        minHeight: isEditingInline ? component.size.height : undefined,
+        height: 'auto',
         zIndex: isSelected ? 20 : (component.parentId ? 15 : 10),
         cursor: 'grab',
       }}
       whileDrag={{ cursor: 'grabbing' }}
       onMouseDown={handleSelect}
       onDoubleClick={handleDoubleClick}
-      className={`group transition-all duration-200 ${isSelected && !isEditingInline ? 'outline outline-2 outline-offset-2 outline-blue-500' : ''}`}
+      className={`group transition-all duration-200`}
     >
-      {isEditingInline && (<InlineEditorToolbar component={component} onUpdateComponent={onUpdateComponent} onStopEditing={() => setInlineEditingId(null)} />)}
-      <div className="w-full h-full relative">
-        {isEditingInline ? (
-          <textarea
-            ref={textareaRef}
-            value={String(editingText || '')}
-            onChange={handleTextChange}
-            onKeyDown={(e) => e.key === 'Escape' && setInlineEditingId(null)}
-            className="w-full h-full p-0 m-0 border-none outline-none focus:ring-0 resize-none bg-transparent block"
-            style={{ ...component.config.style, cursor: 'text' }}
-          />
-        ) : (renderComponentContent())}
-      </div>
-      {isSelected && !isEditingInline && (
-        <div className="absolute -top-7 left-0 flex items-center space-x-1 bg-blue-600 text-white px-2 py-1 rounded text-xs z-20">
-          <span>{component.type}</span>
-          <button onClick={(e) => { e.stopPropagation(); onDuplicateComponent(component.id); }} className="ml-2 hover:bg-blue-700 p-0.5 rounded" title="Dupliquer"><Copy size={14} /></button>
-          <button onClick={(e) => { e.stopPropagation(); onRemoveComponent(component.id); }} className="hover:bg-blue-700 p-0.5 rounded" title="Supprimer"><Trash2 size={14} /></button>
+        {component.config.label && (
+            <label style={{...component.config.labelStyle, display: 'block', marginBottom: '4px', width: '100%'}}>
+                {component.config.label}
+            </label>
+        )}
+      <div style={{ width: '100%', height: component.size.height }} className={`${isSelected && !isEditingInline ? 'outline outline-2 outline-offset-2 outline-blue-500' : ''}`}>
+        {isEditingInline && (<InlineEditorToolbar component={component} onUpdateComponent={onUpdateComponent} onStopEditing={() => setInlineEditingId(null)} />)}
+        <div className="w-full h-full relative">
+            {isEditingInline ? (
+            <textarea
+                ref={textareaRef}
+                value={String(editingText || '')}
+                onChange={handleTextChange}
+                onKeyDown={(e) => e.key === 'Escape' && setInlineEditingId(null)}
+                className="w-full h-full p-0 m-0 border-none outline-none focus:ring-0 resize-none bg-transparent block"
+                style={{ ...component.config.style, cursor: 'text' }}
+            />
+            ) : (renderComponentContent())}
         </div>
-      )}
+        {isSelected && !isEditingInline && (
+            <div className="absolute -top-7 left-0 flex items-center space-x-1 bg-blue-600 text-white px-2 py-1 rounded text-xs z-20">
+            <span>{component.type}</span>
+            <button onClick={(e) => { e.stopPropagation(); onDuplicateComponent(component.id); }} className="ml-2 hover:bg-blue-700 p-0.5 rounded" title="Dupliquer"><Copy size={14} /></button>
+            <button onClick={(e) => { e.stopPropagation(); onRemoveComponent(component.id); }} className="hover:bg-blue-700 p-0.5 rounded" title="Supprimer"><Trash2 size={14} /></button>
+            </div>
+        )}
+      </div>
     </motion.div>
   );
 };

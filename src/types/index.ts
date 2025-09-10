@@ -27,10 +27,11 @@ export interface ComponentConfig {
   value?: any;
   text?: string;
   placeholder?: string;
-  label?: string;
+  label?: string; // Libellé optionnel pour tous les composants
   style?: ComponentStyle;
+  labelStyle?: ComponentStyle; // Styles spécifiques pour le libellé
   targetPageId?: string;
-  // Permet de stocker n'importe quelle autre propriété (src, alt, options, attributes, htmlContent, etc.)
+  // Permet de stocker n'importe quelle autre propriété (src, alt, options, attributes, etc.)
   [key: string]: any;
 }
 

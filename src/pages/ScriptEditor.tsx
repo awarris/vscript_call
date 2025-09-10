@@ -210,6 +210,7 @@ export const ScriptEditor: React.FC = () => {
             <>
               <Canvas
                 components={componentsOnCurrentPage}
+                allComponents={script.components}
                 onUpdateComponent={handleUpdateComponent}
                 onUpdateComponentPosition={handleUpdateComponentPosition}
                 onRemoveComponent={handleRemoveComponent}
@@ -222,7 +223,6 @@ export const ScriptEditor: React.FC = () => {
                 onUpdatePage={handleUpdatePage}
                 inlineEditingId={inlineEditingId}
                 setInlineEditingId={setInlineEditingId}
-                allComponents={script.components}
               />
               <LayersPanel
                 components={componentsOnCurrentPage}

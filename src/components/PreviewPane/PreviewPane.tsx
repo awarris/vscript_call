@@ -7,121 +7,121 @@ import { File, Delete } from 'lucide-react';
 
 // Sous-composant pour la calculatrice fonctionnelle
 const FunctionalCalculator: React.FC<{ styleConfig: ComponentStyle }> = ({ styleConfig }) => {
-    const [currentValue, setCurrentValue] = useState('0');
-    const [previousValue, setPreviousValue] = useState<string | null>(null);
-    const [operator, setOperator] = useState<string | null>(null);
-    const [displayValue, setDisplayValue] = useState('0');
+  const [currentValue, setCurrentValue] = useState('0');
+  const [previousValue, setPreviousValue] = useState<string | null>(null);
+  const [operator, setOperator] = useState<string | null>(null);
+  const [displayValue, setDisplayValue] = useState('0');
 
-    useEffect(() => {
-        let display = currentValue;
-        if (operator) {
-            display = `${previousValue || ''} ${operator} ${currentValue === previousValue ? '' : currentValue}`;
-        }
-        setDisplayValue(display);
-    }, [currentValue, previousValue, operator]);
+  useEffect(() => {
+    let display = currentValue;
+    if (operator) {
+      display = `${previousValue || ''} ${operator} ${currentValue === previousValue ? '' : currentValue}`;
+    }
+    setDisplayValue(display);
+  }, [currentValue, previousValue, operator]);
 
-    const handleDigitClick = (digit: string) => {
-        if (currentValue === '0' || (operator && currentValue === previousValue)) {
-            setCurrentValue(digit);
-        } else {
-            setCurrentValue(currentValue + digit);
-        }
-    };
+  const handleDigitClick = (digit: string) => {
+    if (currentValue === '0' || (operator && currentValue === previousValue)) {
+      setCurrentValue(digit);
+    } else {
+      setCurrentValue(currentValue + digit);
+    }
+  };
 
-    const handleDecimalClick = () => {
-        if (!currentValue.includes('.')) {
-            setCurrentValue(currentValue + '.');
-        }
-    };
+  const handleDecimalClick = () => {
+    if (!currentValue.includes('.')) {
+      setCurrentValue(currentValue + '.');
+    }
+  };
 
-    const handleOperatorClick = (nextOperator: string) => {
-        if (operator && previousValue) {
-             handleEqualClick();
-        } else {
-            setPreviousValue(currentValue);
-        }
-        setOperator(nextOperator);
-    };
+  const handleOperatorClick = (nextOperator: string) => {
+    if (operator && previousValue) {
+      handleEqualClick();
+    } else {
+      setPreviousValue(currentValue);
+    }
+    setOperator(nextOperator);
+  };
 
-    const calculate = () => {
-        const prev = parseFloat(previousValue!);
-        const current = parseFloat(currentValue);
-        let result: number;
-        switch (operator) {
-            case '+': result = prev + current; break;
-            case '-': result = prev - current; break;
-            case '*': result = prev * current; break;
-            case '/': result = prev / current; break;
-            default: return;
-        }
-        return result;
-    };
+  const calculate = () => {
+    const prev = parseFloat(previousValue!);
+    const current = parseFloat(currentValue);
+    let result: number;
+    switch (operator) {
+      case '+': result = prev + current; break;
+      case '-': result = prev - current; break;
+      case '*': result = prev * current; break;
+      case '/': result = prev / current; break;
+      default: return;
+    }
+    return result;
+  };
 
-    const handleEqualClick = () => {
-        if (!operator || previousValue === null) return;
-        const result = calculate();
-        if (result !== undefined) {
-            const resultString = String(result);
-            setCurrentValue(resultString);
-            setPreviousValue(null);
-            setOperator(null);
-        }
-    };
+  const handleEqualClick = () => {
+    if (!operator || previousValue === null) return;
+    const result = calculate();
+    if (result !== undefined) {
+      const resultString = String(result);
+      setCurrentValue(resultString);
+      setPreviousValue(null);
+      setOperator(null);
+    }
+  };
 
-    const handleClearClick = () => {
-        setCurrentValue('0');
-        setPreviousValue(null);
-        setOperator(null);
-    };
+  const handleClearClick = () => {
+    setCurrentValue('0');
+    setPreviousValue(null);
+    setOperator(null);
+  };
 
-    const handleBackspaceClick = () => {
-        if (currentValue.length > 1) {
-            setCurrentValue(currentValue.slice(0, -1));
-        } else {
-            setCurrentValue('0');
-        }
-    };
+  const handleBackspaceClick = () => {
+    if (currentValue.length > 1) {
+      setCurrentValue(currentValue.slice(0, -1));
+    } else {
+      setCurrentValue('0');
+    }
+  };
 
-    const buttons = [
-        { label: <Delete size={18} className="mx-auto" />, action: handleBackspaceClick, style: { bg: styleConfig.buttonColor, text: styleConfig.buttonTextColor }, span: 'col-span-1' },
-        { label: 'C', action: handleClearClick, style: { bg: styleConfig.clearColor, text: styleConfig.clearTextColor }, span: 'col-span-2' },
-        { label: '/', action: () => handleOperatorClick('/'), style: { bg: styleConfig.operatorColor, text: styleConfig.operatorTextColor }, span: 'col-span-1' },
-        { label: '7', action: () => handleDigitClick('7'), style: { bg: styleConfig.buttonColor, text: styleConfig.buttonTextColor }, span: 'col-span-1' },
-        { label: '8', action: () => handleDigitClick('8'), style: { bg: styleConfig.buttonColor, text: styleConfig.buttonTextColor }, span: 'col-span-1' },
-        { label: '9', action: () => handleDigitClick('9'), style: { bg: styleConfig.buttonColor, text: styleConfig.buttonTextColor }, span: 'col-span-1' },
-        { label: '*', action: () => handleOperatorClick('*'), style: { bg: styleConfig.operatorColor, text: styleConfig.operatorTextColor }, span: 'col-span-1' },
-        { label: '4', action: () => handleDigitClick('4'), style: { bg: styleConfig.buttonColor, text: styleConfig.buttonTextColor }, span: 'col-span-1' },
-        { label: '5', action: () => handleDigitClick('5'), style: { bg: styleConfig.buttonColor, text: styleConfig.buttonTextColor }, span: 'col-span-1' },
-        { label: '6', action: () => handleDigitClick('6'), style: { bg: styleConfig.buttonColor, text: styleConfig.buttonTextColor }, span: 'col-span-1' },
-        { label: '-', action: () => handleOperatorClick('-'), style: { bg: styleConfig.operatorColor, text: styleConfig.operatorTextColor }, span: 'col-span-1' },
-        { label: '1', action: () => handleDigitClick('1'), style: { bg: styleConfig.buttonColor, text: styleConfig.buttonTextColor }, span: 'col-span-1' },
-        { label: '2', action: () => handleDigitClick('2'), style: { bg: styleConfig.buttonColor, text: styleConfig.buttonTextColor }, span: 'col-span-1' },
-        { label: '3', action: () => handleDigitClick('3'), style: { bg: styleConfig.buttonColor, text: styleConfig.buttonTextColor }, span: 'col-span-1' },
-        { label: '+', action: () => handleOperatorClick('+'), style: { bg: styleConfig.operatorColor, text: styleConfig.operatorTextColor }, span: 'col-span-1' },
-        { label: '0', action: () => handleDigitClick('0'), style: { bg: styleConfig.buttonColor, text: styleConfig.buttonTextColor }, span: 'col-span-2' },
-        { label: '.', action: handleDecimalClick, style: { bg: styleConfig.buttonColor, text: styleConfig.buttonTextColor }, span: 'col-span-1' },
-        { label: '=', action: handleEqualClick, style: { bg: styleConfig.equalColor, text: styleConfig.equalTextColor }, span: 'col-span-1' },
-    ];
+  const buttons = [
+    { label: <Delete size={18} className="mx-auto" />, action: handleBackspaceClick, style: { bg: styleConfig.buttonColor, text: styleConfig.buttonTextColor }, span: 'col-span-1' },
+    { label: 'C', action: handleClearClick, style: { bg: styleConfig.clearColor, text: styleConfig.clearTextColor }, span: 'col-span-2' },
+    { label: '/', action: () => handleOperatorClick('/'), style: { bg: styleConfig.operatorColor, text: styleConfig.operatorTextColor }, span: 'col-span-1' },
+    { label: '7', action: () => handleDigitClick('7'), style: { bg: styleConfig.buttonColor, text: styleConfig.buttonTextColor }, span: 'col-span-1' },
+    { label: '8', action: () => handleDigitClick('8'), style: { bg: styleConfig.buttonColor, text: styleConfig.buttonTextColor }, span: 'col-span-1' },
+    { label: '9', action: () => handleDigitClick('9'), style: { bg: styleConfig.buttonColor, text: styleConfig.buttonTextColor }, span: 'col-span-1' },
+    { label: '*', action: () => handleOperatorClick('*'), style: { bg: styleConfig.operatorColor, text: styleConfig.operatorTextColor }, span: 'col-span-1' },
+    { label: '4', action: () => handleDigitClick('4'), style: { bg: styleConfig.buttonColor, text: styleConfig.buttonTextColor }, span: 'col-span-1' },
+    { label: '5', action: () => handleDigitClick('5'), style: { bg: styleConfig.buttonColor, text: styleConfig.buttonTextColor }, span: 'col-span-1' },
+    { label: '6', action: () => handleDigitClick('6'), style: { bg: styleConfig.buttonColor, text: styleConfig.buttonTextColor }, span: 'col-span-1' },
+    { label: '-', action: () => handleOperatorClick('-'), style: { bg: styleConfig.operatorColor, text: styleConfig.operatorTextColor }, span: 'col-span-1' },
+    { label: '1', action: () => handleDigitClick('1'), style: { bg: styleConfig.buttonColor, text: styleConfig.buttonTextColor }, span: 'col-span-1' },
+    { label: '2', action: () => handleDigitClick('2'), style: { bg: styleConfig.buttonColor, text: styleConfig.buttonTextColor }, span: 'col-span-1' },
+    { label: '3', action: () => handleDigitClick('3'), style: { bg: styleConfig.buttonColor, text: styleConfig.buttonTextColor }, span: 'col-span-1' },
+    { label: '+', action: () => handleOperatorClick('+'), style: { bg: styleConfig.operatorColor, text: styleConfig.operatorTextColor }, span: 'col-span-1' },
+    { label: '0', action: () => handleDigitClick('0'), style: { bg: styleConfig.buttonColor, text: styleConfig.buttonTextColor }, span: 'col-span-2' },
+    { label: '.', action: handleDecimalClick, style: { bg: styleConfig.buttonColor, text: styleConfig.buttonTextColor }, span: 'col-span-1' },
+    { label: '=', action: handleEqualClick, style: { bg: styleConfig.equalColor, text: styleConfig.equalTextColor }, span: 'col-span-1' },
+  ];
 
-    return (
-        <div className="w-full h-full p-2 rounded-lg flex flex-col" style={{ backgroundColor: styleConfig.backgroundColor }}>
-            <div className="w-full h-1/6 rounded-md mb-2 flex items-end justify-end p-2 text-2xl text-right overflow-hidden break-all" style={{ backgroundColor: styleConfig.displayColor, color: styleConfig.displayTextColor }}>
-                {displayValue}
-            </div>
-            <div className="grid grid-cols-4 gap-2 flex-1">
-                {buttons.map((btn, i) => (
-                    <button
-                        key={i}
-                        onClick={btn.action}
-                        className={`rounded-md text-lg flex items-center justify-center transition-opacity hover:opacity-80 active:opacity-60 ${btn.span}`}
-                        style={{ backgroundColor: btn.style.bg, color: btn.style.text }}
-                    >
-                        {btn.label}
-                    </button>
-                ))}
-            </div>
-        </div>
-    );
+  return (
+    <div className="w-full h-full p-2 rounded-lg flex flex-col" style={{ backgroundColor: styleConfig.backgroundColor }}>
+      <div className="w-full h-1/6 rounded-md mb-2 flex items-end justify-end p-2 text-2xl text-right overflow-hidden break-all" style={{ backgroundColor: styleConfig.displayColor, color: styleConfig.displayTextColor }}>
+        {displayValue}
+      </div>
+      <div className="grid grid-cols-4 gap-2 flex-1">
+        {buttons.map((btn, i) => (
+          <button
+            key={i}
+            onClick={btn.action}
+            className={`rounded-md text-lg flex items-center justify-center transition-opacity hover:opacity-80 active:opacity-60 ${btn.span}`}
+            style={{ backgroundColor: btn.style.bg, color: btn.style.text }}
+          >
+            {btn.label}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
 };
 
 
@@ -137,6 +137,8 @@ export const PreviewPane: React.FC<PreviewPaneProps> = ({
 }) => {
   const [variables, setVariables] = useState<Record<string, any>>({});
   const [componentValues, setComponentValues] = useState<Record<string, any>>({});
+  const [editingDateTimeId, setEditingDateTimeId] = useState<string | null>(null);
+
 
   const currentPage = script.pages.find(p => p.id === currentPageId);
   const currentPageIndex = script.pages.findIndex(p => p.id === currentPageId);
@@ -151,7 +153,10 @@ export const PreviewPane: React.FC<PreviewPaneProps> = ({
     setVariables(initialVariables);
   }, [script.globalVariables]);
 
-  useEffect(() => { setComponentValues({}); }, [currentPageId]);
+  useEffect(() => {
+    setComponentValues({});
+    setEditingDateTimeId(null);
+  }, [currentPageId]);
 
   const executeWorkflow = (triggerType: WorkflowTriggerType, componentId: string) => {
     const applicableRules = workflowRules.filter(rule =>
@@ -182,14 +187,23 @@ export const PreviewPane: React.FC<PreviewPaneProps> = ({
   };
 
   const handleComponentValueChange = (componentId: string, value: any) => {
-    setComponentValues(prev => ({...prev, [componentId]: value}));
+    // Met à jour la valeur du composant dans l'état local
+    setComponentValues(prev => ({ ...prev, [componentId]: value }));
+
+    // CORRECTION : Met à jour AUTOMATIQUEMENT la variable globale si elle est liée
+    const linkedVariable = script.globalVariables.find(v => v.componentId === componentId);
+    if (linkedVariable) {
+      setVariables(prev => ({ ...prev, [linkedVariable.name]: value }));
+    }
+
+    // Exécute les workflows manuels qui pourraient exister
     executeWorkflow('onChange', componentId);
   };
 
   const renderPreviewComponent = (component: Component) => {
     const style = {
-        width: '100%', height: '100%', ...component.config.style,
-        boxSizing: 'border-box' as const,
+      width: '100%', height: '100%', ...component.config.style,
+      boxSizing: 'border-box' as const,
     };
     const eventHandlers = {
       onClick: () => executeWorkflow('onClick', component.id),
@@ -197,36 +211,63 @@ export const PreviewPane: React.FC<PreviewPaneProps> = ({
       onMouseEnter: () => executeWorkflow('onMouseEnter', component.id),
       onMouseLeave: () => executeWorkflow('onMouseLeave', component.id),
     };
+
+    // NOUVELLE LOGIQUE POUR DATE ET HEURE
+    if ((component.type === 'inputDate' || component.type === 'inputTime') && editingDateTimeId === component.id) {
+      return (
+        <input
+          type={component.type === 'inputDate' ? 'date' : 'time'}
+          style={style}
+          value={componentValues[component.id] || ''}
+          onChange={(e) => handleComponentValueChange(component.id, e.target.value)}
+          onBlur={() => setEditingDateTimeId(null)}
+          autoFocus
+        />
+      );
+    }
+
+
     switch (component.type) {
-        case 'paragraphe': case 'h1':
-            return <div style={style} {...eventHandlers}>{component.config.value || component.config.text}</div>;
-        case 'button':
-            return <button style={{...style, cursor: 'pointer'}} {...eventHandlers}>{component.config.value || component.config.text}</button>;
-        case 'input': case 'inputDate': case 'inputTime':
-            return <input {...component.config.attributes} style={style} value={componentValues[component.id] || ''} onChange={(e) => handleComponentValueChange(component.id, e.target.value)} {...eventHandlers} />;
-        case 'textarea':
-            return <textarea {...component.config.attributes} style={style} value={componentValues[component.id] || ''} onChange={(e) => handleComponentValueChange(component.id, e.target.value)} {...eventHandlers} />;
-        case 'image':
-            return <img src={component.config.src} alt={component.config.alt} style={style} {...eventHandlers} />;
-        case 'iframe':
-            if (component.config.htmlContent) {
-              return <iframe srcDoc={component.config.htmlContent} style={style} title="iframe content" />;
-            }
-            return <iframe src={component.config.src} style={style} title="iframe content" />;
-        case 'select':
-            return (
-                <select style={style} value={componentValues[component.id] || ''} onChange={(e) => handleComponentValueChange(component.id, e.target.value)} {...eventHandlers}>
-                    {(component.config.options || []).map((opt: any, index: number) => ( <option key={index} value={opt.value}>{opt.label}</option> ))}
-                </select>
-            );
-        case 'checkbox':
-            return <div style={style}><input type="checkbox" checked={componentValues[component.id] || component.config.checked} onChange={(e) => handleComponentValueChange(component.id, e.target.checked)} {...eventHandlers} /> <label>{component.config.label}</label></div>;
-        case 'calculator':
-            return <FunctionalCalculator styleConfig={component.config.style as ComponentStyle} />;
-        case 'divPannel': case 'ficheClient':
-            return <div style={style} {...eventHandlers}></div>;
-        default:
-            return <div style={{...style, border: '1px dashed red'}}>Composant inconnu: {component.type}</div>;
+      case 'paragraphe': case 'h1':
+        return <div style={style} {...eventHandlers}>{component.config.value || component.config.text}</div>;
+      case 'button':
+        return <button style={{ ...style, cursor: 'pointer' }} {...eventHandlers}>{component.config.value || component.config.text}</button>;
+      case 'input':
+        return <input {...component.config.attributes} style={style} value={componentValues[component.id] || ''} onChange={(e) => handleComponentValueChange(component.id, e.target.value)} {...eventHandlers} />;
+      case 'inputDate':
+      case 'inputTime':
+        return (
+          <div
+            style={{ ...style, cursor: 'pointer', display: 'flex', alignItems: 'center' }}
+            onClick={() => setEditingDateTimeId(component.id)}
+            {...eventHandlers}
+          >
+            {componentValues[component.id] || (component.type === 'inputDate' ? 'jj/mm/aaaa' : 'hh:mm')}
+          </div>
+        )
+      case 'textarea':
+        return <textarea {...component.config.attributes} style={style} value={componentValues[component.id] || ''} onChange={(e) => handleComponentValueChange(component.id, e.target.value)} {...eventHandlers} />;
+      case 'image':
+        return <img src={component.config.src} alt={component.config.alt} style={style} {...eventHandlers} />;
+      case 'iframe':
+        if (component.config.htmlContent) {
+          return <iframe srcDoc={component.config.htmlContent} style={style} title="iframe content" />;
+        }
+        return <iframe src={component.config.src} style={style} title="iframe content" />;
+      case 'select':
+        return (
+          <select style={style} value={componentValues[component.id] || ''} onChange={(e) => handleComponentValueChange(component.id, e.target.value)} {...eventHandlers}>
+            {(component.config.options || []).map((opt: any, index: number) => (<option key={index} value={opt.value}>{opt.label}</option>))}
+          </select>
+        );
+      case 'checkbox':
+        return <div style={{ ...style, display: 'flex', alignItems: 'center' }}><input type="checkbox" checked={componentValues[component.id] || component.config.checked} onChange={(e) => handleComponentValueChange(component.id, e.target.checked)} {...eventHandlers} /> <span style={{ marginLeft: '8px' }}>{component.config.label}</span></div>;
+      case 'calculator':
+        return <FunctionalCalculator styleConfig={component.config.style as ComponentStyle} />;
+      case 'divPannel': case 'ficheClient':
+        return <div style={style} {...eventHandlers}></div>;
+      default:
+        return <div style={{ ...style, border: '1px dashed red' }}>Composant inconnu: {component.type}</div>;
     }
   };
 
@@ -237,18 +278,24 @@ export const PreviewPane: React.FC<PreviewPaneProps> = ({
         style={{ width: getDeviceWidth(device), minHeight: '800px', backgroundColor: currentPage?.backgroundColor || '#ffffff' }}
       >
         {components.map(component => (
-          <div key={component.id} style={{ position: 'absolute', left: component.position.x, top: component.position.y, width: component.size.width, height: component.size.height }}>
-            {renderPreviewComponent(component)}
+          <div key={component.id} style={{ position: 'absolute', left: component.position.x, top: component.position.y, width: component.size.width, height: 'auto' }}>
+            {component.config.label && (
+              <label style={{ ...component.config.labelStyle, display: 'block', marginBottom: '4px' }}>
+                {component.config.label}
+              </label>
+            )}
+            <div style={{ height: component.size.height }}>
+              {renderPreviewComponent(component)}
+            </div>
           </div>
         ))}
 
-        {/* CORRECTION : Pied de page pour l'information de la page actuelle */}
         <div className="absolute bottom-0 left-0 right-0 bg-slate-800 text-white p-2 flex items-center justify-between text-xs">
-            <div className="flex items-center space-x-2">
-                <File size={14} className="text-slate-400" />
-                <span>{currentPage?.name || 'Page inconnue'}</span>
-            </div>
-            <span>Page {currentPageIndex + 1} / {script.pages.length}</span>
+          <div className="flex items-center space-x-2">
+            <File size={14} className="text-slate-400" />
+            <span>{currentPage?.name || 'Page inconnue'}</span>
+          </div>
+          <span>Page {currentPageIndex + 1} / {script.pages.length}</span>
         </div>
 
         {Object.keys(variables).length > 0 && (

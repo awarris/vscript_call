@@ -9,6 +9,7 @@ import { Plus } from 'lucide-react';
 
 interface CanvasProps {
   components: Component[];
+  allComponents: Component[]; // <<<--- CORRECTION ICI
   onUpdateComponent: (id: string, updates: Partial<Component>) => void;
   onUpdateComponentPosition: (id: string, delta: { x: number; y: number }) => void;
   onRemoveComponent: (id: string) => void;

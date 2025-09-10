@@ -1,7 +1,7 @@
 // chemin: vscript_call/src/components/panels/PropertiesPanel.tsx
 
 import React from 'react';
-import { Settings, Palette, Type, Link2, AlignCenter, AlignLeft, AlignRight, Bold, Italic, Underline, Globe, Image as ImageIcon } from 'lucide-react';
+import { Settings, Palette, Type, Link2, AlignCenter, AlignLeft, AlignRight, Bold, Italic, Underline, Globe, Image as ImageIcon, MessageSquare } from 'lucide-react';
 import { Component, ScriptPage, ComponentStyle } from '../../types';
 
 interface PropertiesPanelProps {
@@ -44,14 +44,23 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
     });
   };
 
-    const updateBorderStyle = (property: 'borderStyle' | 'borderColor' | 'borderWidth', value: any) => {
-        updateStyle({ [property]: value });
-    };
+  const updateLabelStyle = (styleUpdates: Partial<ComponentStyle>) => {
+    onUpdateComponent(selectedComponent.id, {
+      config: {
+        ...selectedComponent.config,
+        labelStyle: { ...(selectedComponent.config.labelStyle || {}), ...styleUpdates },
+      },
+    });
+  };
 
+  const updateBorderStyle = (property: 'borderStyle' | 'borderColor' | 'borderWidth', value: any) => {
+      updateStyle({ [property]: value });
+  };
 
-  const toggleStyle = (property: keyof React.CSSProperties, valueA: any, valueB: any) => {
-    const currentStyle = selectedComponent.config.style || {};
-    updateStyle({ [property]: currentStyle[property] === valueA ? valueB : valueA });
+  const toggleStyle = (property: keyof React.CSSProperties, valueA: any, valueB: any, isLabel = false) => {
+    const currentStyle = (isLabel ? selectedComponent.config.labelStyle : selectedComponent.config.style) || {};
+    const updateFunc = isLabel ? updateLabelStyle : updateStyle;
+    updateFunc({ [property]: currentStyle[property] === valueA ? valueB : valueA });
   };
 
   const updatePosition = (axis: 'x' | 'y', value: number) => {
@@ -72,9 +81,6 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
     <>
       {(['paragraphe', 'h1', 'button'].includes(selectedComponent.type)) && (
          <TextareaInput label="Contenu" value={selectedComponent.config.value || ''} onChange={val => updateConfig({ value: val })} />
-      )}
-       {selectedComponent.type === 'checkbox' && (
-         <PropertyInput label="Libellé" value={selectedComponent.config.label || ''} onChange={val => updateConfig({ label: val })} />
       )}
       {selectedComponent.config.placeholder !== undefined && (
         <PropertyInput label="Placeholder" value={selectedComponent.config.placeholder || ''} onChange={val => updateConfig({ placeholder: val })} />
@@ -98,6 +104,17 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
             </div>
         )}
     </>
+  );
+
+  const renderLabelSection = () => (
+    <div className="space-y-4">
+      <PropertyInput
+        label="Texte du libellé"
+        value={selectedComponent.config.label || ''}
+        onChange={val => updateConfig({ label: val })}
+      />
+      <TypographyEditor style={selectedComponent.config.labelStyle} onUpdateStyle={updateLabelStyle} onToggleStyle={(...args) => toggleStyle(...args, true)} />
+    </div>
   );
   
     const renderImageContentSection = () => (
@@ -131,44 +148,11 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
     </div>
   );
 
-  const renderTypographySection = () => {
-    const style = selectedComponent.config.style || {};
-    const fontSize = parseInt(String(style.fontSize || '16').replace('px', ''), 10);
-
-    return (
-        <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-                <div className="col-span-2">
-                    <label className="block text-xs font-semibold text-slate-700 mb-1">Police</label>
-                    <select
-                        value={style.fontFamily || "'Inter', sans-serif"}
-                        onChange={e => updateStyle({ fontFamily: e.target.value })}
-                        className="w-full text-xs bg-white border border-slate-300 rounded-lg px-2 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    >
-                        <option value="'Inter', sans-serif">Inter</option>
-                        <option value="'Arial', sans-serif">Arial</option>
-                        <option value="'Georgia', serif">Georgia</option>
-                        <option value="'Courier New', monospace">Courier</option>
-                        <option value="'Times New Roman', serif">Times</option>
-                    </select>
-                </div>
-                <NumberInput label="Taille" value={isNaN(fontSize) ? 16 : fontSize} onChange={val => updateStyle({ fontSize: `${val}px` })} />
-                <ColorInput label="Couleur du texte" value={style.color || '#000000'} onChange={val => updateStyle({ color: val })} />
-            </div>
-             <div className="flex items-center space-x-2">
-                <ToggleButton label="Gras" isActive={style.fontWeight === 'bold'} onClick={() => toggleStyle('fontWeight', 'bold', 'normal')}><Bold size={16} /></ToggleButton>
-                <ToggleButton label="Italique" isActive={style.fontStyle === 'italic'} onClick={() => toggleStyle('fontStyle', 'italic', 'normal')}><Italic size={16} /></ToggleButton>
-                <ToggleButton label="Souligné" isActive={style.textDecoration === 'underline'} onClick={() => toggleStyle('textDecoration', 'underline', 'none')}><Underline size={16} /></ToggleButton>
-            </div>
-            <div className="flex items-center space-x-2">
-                <ToggleButton label="Gauche" isActive={!style.textAlign || style.textAlign === 'left'} onClick={() => updateStyle({ textAlign: 'left' })}><AlignLeft size={16} /></ToggleButton>
-                <ToggleButton label="Centre" isActive={style.textAlign === 'center'} onClick={() => updateStyle({ textAlign: 'center' })}><AlignCenter size={16} /></ToggleButton>
-                <ToggleButton label="Droite" isActive={style.textAlign === 'right'} onClick={() => updateStyle({ textAlign: 'right' })}><AlignRight size={16} /></ToggleButton>
-            </div>
-        </div>
-    );
-  };
-    const renderImageAppearanceSection = () => {
+  const renderTypographySection = () => (
+    <TypographyEditor style={selectedComponent.config.style} onUpdateStyle={updateStyle} onToggleStyle={(...args) => toggleStyle(...args, false)} />
+  );
+  
+  const renderImageAppearanceSection = () => {
         const style = selectedComponent.config.style || {};
         return (
             <div className="space-y-4">
@@ -214,6 +198,24 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
         );
     };
 
+    const renderInputAppearanceSection = () => {
+        const style = selectedComponent.config.style || {};
+        return (
+            <div className="space-y-4">
+                 <ColorInput label="Fond" value={style.backgroundColor || '#ffffff'} onChange={val => updateStyle({ backgroundColor: val })} />
+                <NumberInput label="Padding (px)" value={parseInt(String(style.padding || '8').replace('px',''), 10)} onChange={val => updateStyle({ padding: `${val}px` })} />
+                <NumberInput label="Arrondi (px)" value={parseInt(String(style.borderRadius || '6').replace('px',''), 10)} onChange={val => updateStyle({ borderRadius: `${val}px` })} />
+                
+                <div>
+                    <h5 className="text-xs font-bold text-slate-500 uppercase tracking-wider mt-4 mb-2">Bordure</h5>
+                    <div className="grid grid-cols-2 gap-4">
+                        <NumberInput label="Épaisseur (px)" value={parseInt(String(style.borderWidth || '1').replace('px', ''), 10)} onChange={val => updateBorderStyle('borderWidth', `${val}px`)} />
+                        <ColorInput label="Couleur" value={style.borderColor || '#cbd5e1'} onChange={val => updateBorderStyle('borderColor', val)} />
+                    </div>
+                </div>
+            </div>
+        )
+    }
 
   const renderAppearanceSection = () => (
     <div className="grid grid-cols-2 gap-4">
@@ -254,6 +256,8 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
     </div>
   );
 
+  const isInputType = ['input', 'inputDate', 'inputTime', 'textarea'].includes(selectedComponent.type);
+
   return (
     <div className="space-y-6">
       <div className="p-3 bg-slate-50 rounded-lg border border-slate-200">
@@ -261,7 +265,11 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
         <p className="text-xs text-slate-500">ID: {selectedComponent.id.slice(-6)}</p>
       </div>
 
-      {['paragraphe', 'h1', 'button', 'input', 'textarea', 'checkbox'].includes(selectedComponent.type) && (
+      <Section title="Libellé" icon={MessageSquare}>
+        {renderLabelSection()}
+      </Section>
+
+      {['paragraphe', 'h1', 'button', 'input'].includes(selectedComponent.type) && (
         <Section title="Contenu" icon={Type}>
             {renderContentSection()}
         </Section>
@@ -279,8 +287,8 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
         </Section>
       )}
 
-      {(['paragraphe', 'textarea', 'h1', 'button', 'checkbox'].includes(selectedComponent.type)) && (
-        <Section title="Typographie" icon={Type}>
+      {(['paragraphe', 'h1', 'button', 'checkbox'].includes(selectedComponent.type) || isInputType) && (
+        <Section title="Style du champ" icon={Type}>
             {renderTypographySection()}
         </Section>
       )}
@@ -288,7 +296,8 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
       <Section title="Apparence" icon={Palette}>
         {selectedComponent.type === 'calculator' && renderCalculatorStyles()}
         {selectedComponent.type === 'image' && renderImageAppearanceSection()}
-        {!['calculator', 'image'].includes(selectedComponent.type) && renderAppearanceSection()}
+        {isInputType && renderInputAppearanceSection()}
+        {!['calculator', 'image', ...['input', 'inputDate', 'inputTime', 'textarea']].includes(selectedComponent.type) && renderAppearanceSection()}
       </Section>
 
       <Section title="Disposition" icon={Settings}>
@@ -383,3 +392,39 @@ const ToggleButton: React.FC<{ label: string; isActive: boolean; onClick: () => 
         {children}
     </button>
 );
+
+const TypographyEditor: React.FC<{ style: ComponentStyle | undefined, onUpdateStyle: (updates: Partial<ComponentStyle>) => void, onToggleStyle: (property: keyof React.CSSProperties, valueA: any, valueB: any) => void }> = ({ style = {}, onUpdateStyle, onToggleStyle }) => {
+    const fontSize = parseInt(String(style.fontSize || '16').replace('px', ''), 10);
+    return (
+        <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+                <div className="col-span-2">
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">Police</label>
+                    <select
+                        value={style.fontFamily || "'Inter', sans-serif"}
+                        onChange={e => onUpdateStyle({ fontFamily: e.target.value })}
+                        className="w-full text-xs bg-white border border-slate-300 rounded-lg px-2 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                        <option value="'Inter', sans-serif">Inter</option>
+                        <option value="'Arial', sans-serif">Arial</option>
+                        <option value="'Georgia', serif">Georgia</option>
+                        <option value="'Courier New', monospace">Courier</option>
+                        <option value="'Times New Roman', serif">Times</option>
+                    </select>
+                </div>
+                <NumberInput label="Taille" value={isNaN(fontSize) ? 16 : fontSize} onChange={val => onUpdateStyle({ fontSize: `${val}px` })} />
+                <ColorInput label="Couleur du texte" value={style.color || '#000000'} onChange={val => onUpdateStyle({ color: val })} />
+            </div>
+            <div className="flex items-center space-x-2">
+                <ToggleButton label="Gras" isActive={style.fontWeight === 'bold'} onClick={() => onToggleStyle('fontWeight', 'bold', 'normal')}><Bold size={16} /></ToggleButton>
+                <ToggleButton label="Italique" isActive={style.fontStyle === 'italic'} onClick={() => onToggleStyle('fontStyle', 'italic', 'normal')}><Italic size={16} /></ToggleButton>
+                <ToggleButton label="Souligné" isActive={style.textDecoration === 'underline'} onClick={() => onToggleStyle('textDecoration', 'underline', 'none')}><Underline size={16} /></ToggleButton>
+            </div>
+            <div className="flex items-center space-x-2">
+                <ToggleButton label="Gauche" isActive={!style.textAlign || style.textAlign === 'left'} onClick={() => onUpdateStyle({ textAlign: 'left' })}><AlignLeft size={16} /></ToggleButton>
+                <ToggleButton label="Centre" isActive={style.textAlign === 'center'} onClick={() => onUpdateStyle({ textAlign: 'center' })}><AlignCenter size={16} /></ToggleButton>
+                <ToggleButton label="Droite" isActive={style.textAlign === 'right'} onClick={() => onUpdateStyle({ textAlign: 'right' })}><AlignRight size={16} /></ToggleButton>
+            </div>
+        </div>
+    );
+};
