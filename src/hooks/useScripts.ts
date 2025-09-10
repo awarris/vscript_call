@@ -1,6 +1,6 @@
 // chemin: src/hooks/useScripts.ts
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Script } from '../types';
 import { createNewEmptyScript } from '../data/defaultScript';
 
@@ -9,6 +9,11 @@ const SCRIPTS_STORAGE_KEY = 'vscript_scripts_storage';
 export const useScripts = () => {
   const [scripts, setScripts] = useState<Script[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+
+  // On utilise une ref pour garder une référence à jour des scripts
+  // sans pour autant que la fonction getScript change d'identité.
+  const scriptsRef = useRef(scripts);
+  scriptsRef.current = scripts;
 
   useEffect(() => {
     try {
@@ -41,9 +46,11 @@ export const useScripts = () => {
     setScripts(prev => prev.filter(s => s.id !== scriptId));
   }, []);
 
+  // La fonction getScript est maintenant stable car elle lit depuis la ref
+  // et n'a plus de dépendance.
   const getScript = useCallback((scriptId: string): Script | undefined => {
-    return scripts.find(s => s.id === scriptId);
-  }, [scripts]);
+    return scriptsRef.current.find(s => s.id === scriptId);
+  }, []);
 
   // CORRECTION : Ajout d'une comparaison pour casser la boucle infinie
   const updateScript = useCallback((scriptId: string, updatedScript: Script) => {

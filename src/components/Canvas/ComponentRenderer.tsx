@@ -112,7 +112,7 @@ export const ComponentRenderer: React.FC<ComponentRendererProps> = (props) => {
 
   const handleDoubleClick = (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (['paragraphe', 'h1', 'textarea', 'checkbox'].includes(component.type)) {
+    if (['paragraphe', 'h1', 'textarea', 'checkbox', 'input'].includes(component.type)) {
       setInlineEditingId(component.id);
     }
   };
@@ -137,7 +137,7 @@ export const ComponentRenderer: React.FC<ComponentRendererProps> = (props) => {
     switch (component.type) {
       case 'paragraphe': case 'h1': return <div style={{...style, pointerEvents: 'none'}}>{String(component.config.value || '')}</div>;
       case 'button': return <button style={{ ...style, pointerEvents: 'none' }}>{String(component.config.value || '')}</button>;
-      case 'input': return <input {...component.config.attributes} style={style} readOnly />;
+      case 'input': return <input {...component.config.attributes} value={String(component.config.value || '')} style={style} readOnly />;
       case 'inputDate':
       case 'inputTime':
         return (
