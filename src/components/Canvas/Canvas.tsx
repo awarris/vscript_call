@@ -172,4 +172,3 @@ export const Canvas: React.FC<CanvasProps> = (props) => {
     </div>
   );
 };
-

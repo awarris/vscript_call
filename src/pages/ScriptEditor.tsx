@@ -228,7 +228,14 @@ export const ScriptEditor: React.FC = () => {
           
           <div className="h-full flex flex-col overflow-hidden">
             {isPreviewMode ? (
-              <PreviewPane script={script} currentPageId={currentPageId} onNavigateToPage={setCurrentPageId} />
+              <PreviewPane
+                script={script}
+                currentPageId={currentPageId}
+                onNavigateToPage={setCurrentPageId}
+                theme={theme}
+                viewState={viewState}
+                setViewState={setViewState}
+              />
             ) : (
               <div className="flex-1 flex overflow-hidden">
                  <Canvas
