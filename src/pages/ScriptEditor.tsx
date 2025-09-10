@@ -72,9 +72,27 @@ export const ScriptEditor: React.FC = () => {
   const [isRightPanelOpen, setIsRightPanelOpen] = useState(true);
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
+  const [isDirty, setIsDirty] = useState(false); // NOUVEL ÉTAT pour suivre les modifications non sauvegardées
 
   // NOUVEL ÉTAT pour le zoom et le panoramique
   const [viewState, setViewState] = useState<ViewState>({ scale: 1, x: 0, y: 0 });
+
+  // Effet pour gérer l'alerte avant de quitter la page
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (isDirty) {
+        e.preventDefault();
+        e.returnValue = ''; // Requis pour la plupart des navigateurs
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, [isDirty]);
+
 
   useEffect(() => {
     document.documentElement.classList.toggle('dark', theme === 'dark');
@@ -85,6 +103,7 @@ export const ScriptEditor: React.FC = () => {
       const foundScript = getScript(scriptId);
       if (foundScript) {
         resetState(foundScript);
+        setIsDirty(false); // Le script est propre au chargement
         const homePage = foundScript.pages.find(p => p.isHomePage) || foundScript.pages[0];
         if (homePage) setCurrentPageId(homePage.id);
       } else {
@@ -93,20 +112,26 @@ export const ScriptEditor: React.FC = () => {
     }
   }, [scriptId, getScript, navigate, resetState]);
 
+  // L'enregistrement automatique se fait toujours en arrière-plan
   useEffect(() => {
     if (script && scriptId) {
       updateScript(scriptId, script);
     }
   }, [script, scriptId, updateScript]);
 
+  // Fonction pour marquer le script comme modifié
+  const setDirty = () => setIsDirty(true);
+  
   const handleUpdateScript = (updates: Partial<Script>) => {
     setScript(prev => prev ? { ...prev, ...updates } : null);
+    setDirty();
   };
 
   const handleSaveScript = () => {
     if (script && scriptId) {
       setSaveStatus('saving');
       updateScript(scriptId, script);
+      setIsDirty(false); // Le script est maintenant propre
       setTimeout(() => {
         setSaveStatus('saved');
         setTimeout(() => setSaveStatus('idle'), 2000);
@@ -126,6 +151,7 @@ export const ScriptEditor: React.FC = () => {
     setScript(prev => prev ? { ...prev, components: [...prev.components, newComponent] } : null);
     setSelectedComponentId(newComponent.id);
     setActiveTab('properties');
+    setDirty();
     return newComponent.id;
   };
   
@@ -139,6 +165,7 @@ export const ScriptEditor: React.FC = () => {
         ),
       };
     });
+    setDirty();
   };
 
   const handleUpdateComponentPosition = useCallback((id: string, newPosition: { x: number; y: number }) => {
@@ -151,14 +178,15 @@ export const ScriptEditor: React.FC = () => {
         ),
       };
     });
+    setDirty();
 }, [setScript]);
 
   const handleRemoveComponent = (id: string) => {
     if (!script) return;
     const idsToRemove = new Set<string>([id]);
-    // Logique pour supprimer aussi les enfants si nécessaire
     setScript(prev => prev ? { ...prev, components: prev.components.filter(c => !idsToRemove.has(c.id)) } : null);
     if (selectedComponentId === id) setSelectedComponentId(null);
+    setDirty();
   };
 
   const handleDuplicateComponent = (id: string) => {
@@ -170,6 +198,7 @@ export const ScriptEditor: React.FC = () => {
       };
       setScript(prev => prev ? { ...prev, components: [...prev.components, newComponent] } : null);
       setSelectedComponentId(newComponent.id);
+      setDirty();
     }
   };
 
@@ -178,10 +207,12 @@ export const ScriptEditor: React.FC = () => {
       ...prev,
       pages: prev.pages.map(p => p.id === currentPageId ? { ...p, ...updates } : p)
     } : null);
+    setDirty();
   };
 
   const handleImportScript = (importedScript: Script) => {
     resetState(importedScript);
+    setIsDirty(false);
     const homePage = importedScript.pages.find(p => p.isHomePage) || importedScript.pages[0];
     setCurrentPageId(homePage?.id || '');
   };
