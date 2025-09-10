@@ -114,7 +114,8 @@ export const ComponentRenderer: React.FC<ComponentRendererProps> = ({
   
   const handleDoubleClick = (e: React.MouseEvent) => {
       e.stopPropagation();
-      if (component.type === 'paragraphe' || component.type === 'h1') {
+      // MODIFICATION: Ajout de 'textarea'
+      if (component.type === 'paragraphe' || component.type === 'h1' || component.type === 'textarea') {
           setInlineEditingId(component.id);
       }
   };
@@ -145,7 +146,8 @@ export const ComponentRenderer: React.FC<ComponentRendererProps> = ({
       case 'input': case 'inputDate': case 'inputTime':
         return <input {...component.config.attributes} style={style} readOnly />;
       case 'textarea':
-        return <textarea {...component.config.attributes} style={style} readOnly />;
+        // MODIFICATION: Assurer que la 'value' est bien affichée
+        return <textarea {...component.config.attributes} value={String(component.config.value || '')} style={style} readOnly />;
       case 'image':
         return <img src={component.config.src} alt={component.config.alt} style={style} />;
       case 'iframe':
@@ -231,4 +233,3 @@ export const ComponentRenderer: React.FC<ComponentRendererProps> = ({
     </motion.div>
   );
 };
-

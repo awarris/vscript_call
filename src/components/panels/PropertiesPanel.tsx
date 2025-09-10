@@ -158,7 +158,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
         {renderContentSection()}
       </Section>
       
-      {(selectedComponent.type === 'paragraphe' || selectedComponent.type === 'h1' || selectedComponent.type === 'button') && (
+      {(selectedComponent.type === 'paragraphe' || selectedComponent.type === 'textarea' || selectedComponent.type === 'text' || selectedComponent.type === 'h1' || selectedComponent.type === 'button') && (
         <Section title="Typographie" icon={Type}>
             {renderTypographySection()}
         </Section>
