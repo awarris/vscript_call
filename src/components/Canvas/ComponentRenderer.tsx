@@ -1,13 +1,14 @@
 // chemin: vscript_call/src/components/Canvas/ComponentRenderer.tsx
 
 import React, { useRef, useEffect } from 'react';
-import { motion } from 'framer-motion';
+import { motion, PanInfo } from 'framer-motion';
 import {
     Bold, Italic, Underline, AlignLeft, AlignCenter, AlignRight,
     X, Copy, Trash2, Palette, Delete, Calendar, Clock
 } from 'lucide-react';
 import { Component, ComponentStyle } from '../../types';
 import { validateComponentPosition } from '../../utils/helpers';
+import { CANVAS_WIDTH, CANVAS_HEIGHT } from './Canvas'; // Import des constantes
 
 // Sous-composant pour le rendu de la calculatrice (statique et stylisable)
 const StaticCalculator = ({ styleConfig }: { styleConfig: ComponentStyle }) => {
@@ -67,19 +68,20 @@ interface ComponentRendererProps {
   selectedComponentId: string | null;
   onSelectComponent: (id: string | null) => void;
   onUpdateComponent: (id: string, updates: Partial<Component>) => void;
-  onUpdateComponentPosition: (id: string, delta: { x: number; y: number }) => void;
+  onUpdateComponentPosition: (id: string, newPosition: { x: number; y: number }) => void;
   onRemoveComponent: (id: string) => void;
   onDuplicateComponent: (id: string) => void;
   inlineEditingId: string | null;
   setInlineEditingId: (id: string | null) => void;
   canvasSize: { width: number; height: number };
+  viewScale: number; // Nouvelle prop pour l'échelle actuelle
 }
 
 export const ComponentRenderer: React.FC<ComponentRendererProps> = (props) => {
   const {
     component, allComponents, selectedComponentId, onSelectComponent,
-    onUpdateComponent, onRemoveComponent, onDuplicateComponent, 
-    inlineEditingId, setInlineEditingId, canvasSize
+    onUpdateComponent, onUpdateComponentPosition, onRemoveComponent, onDuplicateComponent, 
+    inlineEditingId, setInlineEditingId, canvasSize, viewScale
   } = props;
 
   const isSelected = component.id === selectedComponentId;
@@ -126,6 +128,15 @@ export const ComponentRenderer: React.FC<ComponentRendererProps> = (props) => {
     const el = e.target;
     el.style.height = 'auto';
     el.style.height = `${el.scrollHeight}px`;
+  };
+
+  const handleDragEnd = (event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
+    const newPosition = {
+        x: component.position.x + info.offset.x / viewScale,
+        y: component.position.y + info.offset.y / viewScale
+    };
+    const validated = validateComponentPosition(newPosition, component.size, canvasSize);
+    onUpdateComponentPosition(component.id, validated);
   };
 
   const renderComponentContent = () => {
@@ -181,6 +192,7 @@ export const ComponentRenderer: React.FC<ComponentRendererProps> = (props) => {
                 inlineEditingId={inlineEditingId}
                 setInlineEditingId={setInlineEditingId}
                 canvasSize={canvasSize}
+                viewScale={viewScale}
               />
             ))}
           </div>
@@ -202,14 +214,7 @@ export const ComponentRenderer: React.FC<ComponentRendererProps> = (props) => {
         right: canvasSize.width - component.size.width,
         bottom: canvasSize.height - component.size.height,
       }}
-      onDragEnd={(event, info) => {
-        const newPosition = {
-            x: component.position.x + info.offset.x,
-            y: component.position.y + info.offset.y
-        };
-        const validated = validateComponentPosition(newPosition, component.size, canvasSize);
-        onUpdateComponent(component.id, { position: validated });
-      }}
+      onDragEnd={handleDragEnd}
       dragMomentum={false}
       style={{
         position: 'absolute',
@@ -219,7 +224,7 @@ export const ComponentRenderer: React.FC<ComponentRendererProps> = (props) => {
         height: 'auto',
         zIndex: isSelected ? 20 : (component.parentId ? 15 : 10),
         cursor: 'grab',
-        opacity: component.config.visible !== false ? 1 : 0.5
+        opacity: component.config.visible !== false ? 1 : 0.5,
       }}
       whileDrag={{ cursor: 'grabbing' }}
       onMouseDown={handleSelect}
@@ -231,7 +236,9 @@ export const ComponentRenderer: React.FC<ComponentRendererProps> = (props) => {
                 {component.config.label}
             </label>
         )}
-      <div style={{ width: '100%', height: component.size.height }} className={`${isSelected && !isEditingInline ? 'outline outline-2 outline-offset-2 outline-blue-500' : ''}`}>
+      <div style={{ width: '100%', height: component.size.height }} className={`${isSelected && !isEditingInline ? `outline outline-2 outline-offset-2 outline-blue-500` : ''}`}
+           style={{ outlineWidth: `${2 / viewScale}px`, outlineOffset: `${2 / viewScale}px`}}
+      >
         {isEditingInline && (<InlineEditorToolbar component={component} onUpdateComponent={onUpdateComponent} onStopEditing={() => setInlineEditingId(null)} />)}
         <div className="w-full h-full relative">
             {isEditingInline ? (
@@ -246,7 +253,9 @@ export const ComponentRenderer: React.FC<ComponentRendererProps> = (props) => {
             ) : (renderComponentContent())}
         </div>
         {isSelected && !isEditingInline && (
-            <div className="absolute -top-7 left-0 flex items-center space-x-1 bg-blue-600 text-white px-2 py-1 rounded text-xs z-20">
+            <div className="absolute -top-7 left-0 flex items-center space-x-1 bg-blue-600 text-white px-2 py-1 rounded text-xs z-20"
+                 style={{ transform: `scale(${1/viewScale})`, transformOrigin: 'top left' }}
+            >
             <span>{component.type}</span>
             <button onClick={(e) => { e.stopPropagation(); onDuplicateComponent(component.id); }} className="ml-2 hover:bg-blue-700 p-0.5 rounded" title="Dupliquer"><Copy size={14} /></button>
             <button onClick={(e) => { e.stopPropagation(); onRemoveComponent(component.id); }} className="hover:bg-blue-700 p-0.5 rounded" title="Supprimer"><Trash2 size={14} /></button>

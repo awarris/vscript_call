@@ -45,6 +45,13 @@ const mergeDeep = <T extends object>(target: T, source: Partial<T>): T => {
   return output;
 };
 
+// Interface pour l'état de la vue (zoom/pan)
+export interface ViewState {
+  scale: number;
+  x: number;
+  y: number;
+}
+
 
 /**
  * Composant principal de l'éditeur de script.
@@ -64,6 +71,9 @@ export const ScriptEditor: React.FC = () => {
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [isRightPanelOpen, setIsRightPanelOpen] = useState(true);
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
+
+  // NOUVEL ÉTAT pour le zoom et le panoramique
+  const [viewState, setViewState] = useState<ViewState>({ scale: 1, x: 0, y: 0 });
 
   useEffect(() => {
     document.documentElement.classList.toggle('dark', theme === 'dark');
@@ -119,17 +129,9 @@ export const ScriptEditor: React.FC = () => {
     });
   };
 
-  const handleUpdateComponentPosition = useCallback((id: string, delta: { x: number; y: number }) => {
+  const handleUpdateComponentPosition = useCallback((id: string, newPosition: { x: number; y: number }) => {
     setScript(prev => {
       if (!prev) return null;
-      const component = prev.components.find(c => c.id === id);
-      if (!component) return prev;
-      
-      const newPosition = {
-          x: component.position.x + delta.x,
-          y: component.position.y + delta.y
-      };
-
       return {
         ...prev,
         components: prev.components.map(c => 
@@ -137,7 +139,7 @@ export const ScriptEditor: React.FC = () => {
         ),
       };
     });
-  }, [setScript]);
+}, [setScript]);
 
   const handleRemoveComponent = (id: string) => {
     if (!script) return;
@@ -216,13 +218,17 @@ export const ScriptEditor: React.FC = () => {
           onToggleRightPanels={() => setIsRightPanelOpen(!isRightPanelOpen)}
           theme={theme}
           setTheme={setTheme}
+          zoomLevel={viewState.scale}
+          onZoomIn={() => setViewState(v => ({...v, scale: Math.min(v.scale * 1.2, 4)}))}
+          onZoomOut={() => setViewState(v => ({...v, scale: Math.max(v.scale / 1.2, 0.1)}))}
+          onZoomReset={() => setViewState({ scale: 1, x: 0, y: 0 })}
         />
         <div className="flex-1 relative overflow-hidden">
           <ChatPanel isOpen={isChatOpen} onClose={() => setIsChatOpen(false)} script={script} />
           
           <div className="h-full flex flex-col overflow-hidden">
             {isPreviewMode ? (
-              <PreviewPane script={script} currentPageId={currentPageId} device="desktop" onNavigateToPage={setCurrentPageId} />
+              <PreviewPane script={script} currentPageId={currentPageId} onNavigateToPage={setCurrentPageId} />
             ) : (
               <div className="flex-1 flex overflow-hidden">
                  <Canvas
@@ -240,6 +246,8 @@ export const ScriptEditor: React.FC = () => {
                     inlineEditingId={inlineEditingId}
                     setInlineEditingId={setInlineEditingId}
                     theme={theme}
+                    viewState={viewState}
+                    setViewState={setViewState}
                   />
                   
                   {isRightPanelOpen && (

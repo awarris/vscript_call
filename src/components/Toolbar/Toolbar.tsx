@@ -2,16 +2,8 @@
 
 import React from 'react';
 import { 
-  Eye, 
-  Upload, 
-  Download,
-  Undo, 
-  Redo,
-  Play,
-  PanelRight,
-  MessageSquare,
-  Moon,
-  Sun
+  Eye, Upload, Download, Undo, Redo, Play, PanelRight,
+  MessageSquare, Moon, Sun, ZoomIn, ZoomOut, RefreshCw
 } from 'lucide-react';
 import { Script } from '../../types';
 import { exportScriptToJSON, importScriptFromJSON } from '../../utils/helpers';
@@ -31,6 +23,11 @@ interface ToolbarProps {
   onToggleRightPanels: () => void;
   theme: 'light' | 'dark';
   setTheme: (theme: 'light' | 'dark') => void;
+  // NOUVELLES PROPS POUR LE ZOOM
+  zoomLevel: number;
+  onZoomIn: () => void;
+  onZoomOut: () => void;
+  onZoomReset: () => void;
 }
 
 export const Toolbar: React.FC<ToolbarProps> = ({
@@ -47,6 +44,10 @@ export const Toolbar: React.FC<ToolbarProps> = ({
   onToggleRightPanels,
   theme,
   setTheme,
+  zoomLevel,
+  onZoomIn,
+  onZoomOut,
+  onZoomReset,
 }) => {
 
   // Gestion de l'importation d'un script via un fichier JSON
@@ -115,8 +116,14 @@ export const Toolbar: React.FC<ToolbarProps> = ({
         </button>
       </div>
 
-      {/* Section Centrale (vide maintenant) */}
-      <div className="flex-1"></div>
+      {/* Section Centrale : Contrôles de zoom */}
+      <div className="flex items-center space-x-2 text-gray-vs-600 dark:text-gray-vs-300">
+        <button onClick={onZoomOut} className="p-2 rounded-md hover:bg-gray-vs-100 dark:hover:bg-gray-vs-700" title="Zoom arrière"><ZoomOut size={18} /></button>
+        <button onClick={onZoomReset} className="text-sm font-semibold w-16 text-center hover:bg-gray-vs-100 dark:hover:bg-gray-vs-700 rounded-md py-1" title="Réinitialiser le zoom">
+            {Math.round(zoomLevel * 100)}%
+        </button>
+        <button onClick={onZoomIn} className="p-2 rounded-md hover:bg-gray-vs-100 dark:hover:bg-gray-vs-700" title="Zoom avant"><ZoomIn size={18} /></button>
+      </div>
 
       {/* Section Droite : Actions principales et gestion de l'affichage */}
       <div className="flex items-center space-x-2">

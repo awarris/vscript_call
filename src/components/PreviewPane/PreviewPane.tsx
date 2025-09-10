@@ -127,7 +127,7 @@ const FunctionalCalculator: React.FC<{ styleConfig: ComponentStyle }> = ({ style
 interface PreviewPaneProps {
   script: Script;
   currentPageId: string;
-  device: 'mobile' | 'tablet' | 'desktop'; // La prop est conservée pour la compatibilité
+  device: 'mobile' | 'tablet' | 'desktop';
   onNavigateToPage: (pageId: string) => void;
 }
 
@@ -257,7 +257,6 @@ const executeWorkflow = (triggerType: WorkflowTriggerType, componentId: string) 
         );
     }
 
-
     switch (component.type) {
         case 'paragraphe': case 'h1':
             return <div style={style} {...eventHandlers}>{component.config.value || component.config.text}</div>;
@@ -301,47 +300,55 @@ const executeWorkflow = (triggerType: WorkflowTriggerType, componentId: string) 
             return <div style={{...style, border: '1px dashed red'}}>Composant inconnu: {component.type}</div>;
     }
   };
-  
-  const previewWidth = 1200; // Largeur fixe pour le mode aperçu
 
   return (
-    <div className="flex-1 bg-slate-200 overflow-auto p-8 flex justify-center items-start">
-      <div
-        className="bg-white rounded-xl shadow-2xl border border-slate-300 relative overflow-hidden"
-        style={{ width: previewWidth, minHeight: '800px', backgroundColor: currentPage?.backgroundColor || '#ffffff' }}
-      >
-        {components
-          .filter(c => componentVisibility[c.id]) // Filtre les composants non visibles
-          .map(component => (
-            <div key={component.id} style={{ position: 'absolute', left: component.position.x, top: component.position.y, width: component.size.width, height: 'auto' }}>
-              {component.config.label && (
-                  <label style={{...component.config.labelStyle, display: 'block', marginBottom: '4px'}}>
-                      {component.config.label}
-                  </label>
-              )}
-              <div style={{height: component.size.height}}>
-                {renderPreviewComponent(component)}
+    <div className="flex-1 bg-slate-200 overflow-auto p-8">
+      <div className="flex w-full h-full gap-6">
+        {/* Panneau principal de l'aperçu (flexible) */}
+        <div
+          className="flex-1 bg-white rounded-xl shadow-2xl border border-slate-300 relative overflow-hidden"
+          style={{ backgroundColor: currentPage?.backgroundColor || '#ffffff' }}
+        >
+          {components
+            .filter(c => componentVisibility[c.id])
+            .map(component => (
+              <div key={component.id} style={{ position: 'absolute', left: component.position.x, top: component.position.y, width: component.size.width, height: 'auto' }}>
+                {component.config.label && (
+                    <label style={{...component.config.labelStyle, display: 'block', marginBottom: '4px'}}>
+                        {component.config.label}
+                    </label>
+                )}
+                <div style={{height: component.size.height}}>
+                  {renderPreviewComponent(component)}
+                </div>
               </div>
-            </div>
-        ))}
+          ))}
 
-        <div className="absolute bottom-0 left-0 right-0 bg-slate-800 text-white p-2 flex items-center justify-between text-xs">
-            <div className="flex items-center space-x-2">
-                <File size={14} className="text-slate-400" />
-                <span>{currentPage?.name || 'Page inconnue'}</span>
-            </div>
-            <span>Page {currentPageIndex + 1} / {script.pages.length}</span>
+          <div className="absolute bottom-0 left-0 right-0 bg-gray-400 text-white p-2 flex items-center justify-between text-xs">
+              <div className="flex items-center space-x-2">
+                  <File size={14} className="text-slate-400" />
+                  <span>{currentPage?.name || 'Page inconnue'}</span>
+              </div>
+              <span>Page {currentPageIndex + 1} / {script.pages.length}</span>
+          </div>
         </div>
 
+        {/* Panneau vertical pour les variables (largeur fixe) */}
         {Object.keys(variables).length > 0 && (
-          <div className="absolute bottom-10 right-4 bg-slate-800 bg-opacity-80 text-white p-3 rounded-lg text-xs backdrop-blur-sm shadow-xl">
-            <div className="font-semibold mb-2 text-blue-300 border-b border-slate-600 pb-1">Variables</div>
-            {Object.entries(variables).map(([key, value]) => (
-              <div key={key} className="flex justify-between mt-1">
-                <span className="text-slate-400">{key}:</span>
-                <span className="ml-4 font-mono text-emerald-300">{JSON.stringify(value)}</span>
-              </div>
-            ))}
+          <div className="w-72 flex-shrink-0 bg-white rounded-xl p-4 flex flex-col">
+            <h3 className="font-bold text-lg text-blue-300 border-b border-slate-600 pb-2 mb-4">
+              Variables Globales
+            </h3>
+            <div className="overflow-y-auto flex-1 space-y-3 pr-2">
+              {Object.entries(variables).map(([key, value]) => (
+                <div key={key} className="bg-gray-100 rounded-lg p-3">
+                  <div className="text-sm text-slate-700 font-bold mb-1">{key}</div>
+                  <div className="font-mono text-emerald-500 text-base break-words">
+                    {JSON.stringify(value)}
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         )}
       </div>
