@@ -1,7 +1,7 @@
 // chemin: vscript_call/src/components/panels/PropertiesPanel.tsx
 
 import React from 'react';
-import { Settings, Palette, Type, Link2, AlignCenter, AlignLeft, AlignRight, Bold, Italic } from 'lucide-react';
+import { Settings, Palette, Type, Link2, AlignCenter, AlignLeft, AlignRight, Bold, Italic, Underline } from 'lucide-react';
 import { Component, ScriptPage, ComponentStyle } from '../../types';
 
 interface PropertiesPanelProps {
@@ -29,7 +29,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
 
   // --- Fonctions utilitaires pour mettre à jour les propriétés ---
 
-  const updateConfig = (updates: any) => {
+  const updateConfig = (updates: Partial<Component['config']>) => {
     onUpdateComponent(selectedComponent.id, {
       config: { ...selectedComponent.config, ...updates },
     });
@@ -39,9 +39,14 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
     onUpdateComponent(selectedComponent.id, {
       config: {
         ...selectedComponent.config,
-        style: { ...selectedComponent.config.style, ...styleUpdates },
+        style: { ...(selectedComponent.config.style || {}), ...styleUpdates },
       },
     });
+  };
+
+  const toggleStyle = (property: keyof React.CSSProperties, valueA: any, valueB: any) => {
+    const currentStyle = selectedComponent.config.style || {};
+    updateStyle({ [property]: currentStyle[property] === valueA ? valueB : valueA });
   };
 
   const updatePosition = (axis: 'x' | 'y', value: number) => {
@@ -60,8 +65,8 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
 
   const renderContentSection = () => (
     <>
-      {selectedComponent.config.text !== undefined && (
-        <PropertyInput label="Texte" value={selectedComponent.config.text || ''} onChange={val => updateConfig({ text: val })} />
+      {(selectedComponent.type === 'paragraphe' || selectedComponent.type === 'h1' || selectedComponent.type === 'button') && (
+         <TextareaInput label="Contenu" value={selectedComponent.config.value || ''} onChange={val => updateConfig({ value: val })} />
       )}
       {selectedComponent.config.placeholder !== undefined && (
         <PropertyInput label="Placeholder" value={selectedComponent.config.placeholder || ''} onChange={val => updateConfig({ placeholder: val })} />
@@ -79,23 +84,57 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                 >
                     <option value="">Aucune navigation</option>
                     {pages.filter(p => p.id !== currentPageId).map(page => (
-                        <option key={page.id} value={page.id}>
-                        {page.name}
-                        </option>
+                        <option key={page.id} value={page.id}>{page.name}</option>
                     ))}
                 </select>
             </div>
         )}
     </>
   );
+  
+  const renderTypographySection = () => {
+    const style = selectedComponent.config.style || {};
+    const fontSize = parseInt(String(style.fontSize || '16').replace('px', ''), 10);
+    
+    return (
+        <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+                <div className="col-span-2">
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">Police</label>
+                    <select
+                        value={style.fontFamily || "'Inter', sans-serif"}
+                        onChange={e => updateStyle({ fontFamily: e.target.value })}
+                        className="w-full text-xs bg-white border border-slate-300 rounded-lg px-2 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                        <option value="'Inter', sans-serif">Inter</option>
+                        <option value="'Arial', sans-serif">Arial</option>
+                        <option value="'Georgia', serif">Georgia</option>
+                        <option value="'Courier New', monospace">Courier</option>
+                        <option value="'Times New Roman', serif">Times</option>
+                    </select>
+                </div>
+                <NumberInput label="Taille" value={isNaN(fontSize) ? 16 : fontSize} onChange={val => updateStyle({ fontSize: `${val}px` })} />
+                <ColorInput label="Couleur du texte" value={style.color || '#000000'} onChange={val => updateStyle({ color: val })} />
+            </div>
+             <div className="flex items-center space-x-2">
+                <ToggleButton label="Gras" isActive={style.fontWeight === 'bold'} onClick={() => toggleStyle('fontWeight', 'bold', 'normal')}><Bold size={16} /></ToggleButton>
+                <ToggleButton label="Italique" isActive={style.fontStyle === 'italic'} onClick={() => toggleStyle('fontStyle', 'italic', 'normal')}><Italic size={16} /></ToggleButton>
+                <ToggleButton label="Souligné" isActive={style.textDecoration === 'underline'} onClick={() => toggleStyle('textDecoration', 'underline', 'none')}><Underline size={16} /></ToggleButton>
+            </div>
+            <div className="flex items-center space-x-2">
+                <ToggleButton label="Gauche" isActive={!style.textAlign || style.textAlign === 'left'} onClick={() => updateStyle({ textAlign: 'left' })}><AlignLeft size={16} /></ToggleButton>
+                <ToggleButton label="Centre" isActive={style.textAlign === 'center'} onClick={() => updateStyle({ textAlign: 'center' })}><AlignCenter size={16} /></ToggleButton>
+                <ToggleButton label="Droite" isActive={style.textAlign === 'right'} onClick={() => updateStyle({ textAlign: 'right' })}><AlignRight size={16} /></ToggleButton>
+            </div>
+        </div>
+    );
+  };
 
-  const renderStyleSection = () => (
+  const renderAppearanceSection = () => (
     <div className="grid grid-cols-2 gap-4">
         <ColorInput label="Fond" value={selectedComponent.config.style?.backgroundColor || '#ffffff'} onChange={val => updateStyle({ backgroundColor: val })} />
-        <ColorInput label="Texte" value={selectedComponent.config.style?.textColor || '#000000'} onChange={val => updateStyle({ textColor: val })} />
-        <NumberInput label="Police" value={selectedComponent.config.style?.fontSize || 16} onChange={val => updateStyle({ fontSize: val })} />
-        <NumberInput label="Arrondi" value={selectedComponent.config.style?.borderRadius || 0} onChange={val => updateStyle({ borderRadius: val })} />
-        <NumberInput label="Padding" value={selectedComponent.config.style?.padding || 0} onChange={val => updateStyle({ padding: val })} />
+        <NumberInput label="Arrondi" value={parseInt(String(selectedComponent.config.style?.borderRadius || '0').replace('px',''), 10)} onChange={val => updateStyle({ borderRadius: `${val}px` })} />
+        <NumberInput label="Padding" value={parseInt(String(selectedComponent.config.style?.padding || '0').replace('px',''), 10)} onChange={val => updateStyle({ padding: `${val}px` })} />
     </div>
   );
 
@@ -118,9 +157,15 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
       <Section title="Contenu" icon={Type}>
         {renderContentSection()}
       </Section>
+      
+      {(selectedComponent.type === 'paragraphe' || selectedComponent.type === 'h1' || selectedComponent.type === 'button') && (
+        <Section title="Typographie" icon={Type}>
+            {renderTypographySection()}
+        </Section>
+      )}
 
-      <Section title="Style" icon={Palette}>
-        {renderStyleSection()}
+      <Section title="Apparence" icon={Palette}>
+        {renderAppearanceSection()}
       </Section>
       
       <Section title="Disposition" icon={Settings}>
@@ -155,13 +200,25 @@ const PropertyInput: React.FC<{ label: string; value: string; onChange: (value: 
     </div>
 );
 
+const TextareaInput: React.FC<{ label: string; value: string; onChange: (value: string) => void }> = ({ label, value, onChange }) => (
+    <div>
+        <label className="block text-xs font-semibold text-slate-700 mb-1">{label}</label>
+        <textarea
+            value={value}
+            onChange={(e) => onChange(e.target.value)}
+            className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 h-24 resize-none"
+        />
+    </div>
+);
+
+
 const NumberInput: React.FC<{ label: string; value: number; onChange: (value: number) => void }> = ({ label, value, onChange }) => (
     <div>
         <label className="block text-xs font-semibold text-slate-700 mb-1">{label}</label>
         <input
             type="number"
             value={value}
-            onChange={(e) => onChange(parseInt(e.target.value, 10))}
+            onChange={(e) => onChange(parseInt(e.target.value, 10) || 0)}
             className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
     </div>
@@ -170,11 +227,37 @@ const NumberInput: React.FC<{ label: string; value: number; onChange: (value: nu
 const ColorInput: React.FC<{ label: string; value: string; onChange: (value: string) => void }> = ({ label, value, onChange }) => (
     <div>
         <label className="block text-xs font-semibold text-slate-700 mb-1">{label}</label>
-        <input
-            type="color"
-            value={value}
-            onChange={(e) => onChange(e.target.value)}
-            className="w-full h-10 p-1 border border-slate-300 rounded-lg cursor-pointer"
-        />
+        <div className="flex items-center h-10 space-x-2 border border-slate-300 rounded-lg px-2">
+            <input
+                type="color"
+                value={value}
+                onChange={(e) => onChange(e.target.value)}
+                className="w-6 h-6 p-0 border-none rounded cursor-pointer bg-transparent"
+                style={{ appearance: 'none', WebkitAppearance: 'none' }}
+            />
+            <input 
+                type="text"
+                value={value.toUpperCase()}
+                onChange={(e) => onChange(e.target.value)}
+                className="w-full text-sm font-mono outline-none border-none focus:ring-0 bg-transparent"
+                onBlur={(e) => {
+                    if (!/^#[0-9A-F]{6}$/i.test(e.target.value)) {
+                       onChange(value); 
+                    }
+                }}
+            />
+        </div>
     </div>
 );
+
+
+const ToggleButton: React.FC<{ label: string; isActive: boolean; onClick: () => void; children: React.ReactNode }> = ({ label, isActive, onClick, children }) => (
+    <button
+        title={label}
+        onClick={onClick}
+        className={`p-2 rounded-lg transition-colors ${isActive ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
+    >
+        {children}
+    </button>
+);
+

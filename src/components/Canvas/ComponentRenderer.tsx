@@ -1,8 +1,11 @@
 // chemin: src/components/Canvas/ComponentRenderer.tsx
 
-import React from 'react';
+import React, { useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Trash2, Copy } from 'lucide-react';
+import { 
+    Bold, Italic, Underline, Strikethrough, AlignLeft, AlignCenter, AlignRight, 
+    X, Copy, Trash2, Palette
+} from 'lucide-react';
 import { Component } from '../../types';
 
 interface ComponentRendererProps {
@@ -12,11 +15,118 @@ interface ComponentRendererProps {
   onUpdate: (id: string, updates: Partial<Component>) => void;
   onRemove: (id: string) => void;
   onDuplicate: (id: string) => void;
+  inlineEditingId: string | null;
+  setInlineEditingId: (id: string | null) => void;
 }
 
+const InlineEditorToolbar: React.FC<{
+    component: Component;
+    onUpdate: (id: string, updates: Partial<Component>) => void;
+    onStopEditing: () => void;
+}> = ({ component, onUpdate, onStopEditing }) => {
+
+    const applyStyle = (style: Partial<React.CSSProperties>) => {
+        onUpdate(component.id, {
+            config: {
+                ...component.config,
+                style: { ...(component.config.style || {}), ...style }
+            }
+        });
+    };
+
+    const toggleStyle = (property: keyof React.CSSProperties, valueA: any, valueB: any) => {
+        const currentStyle = component.config.style || {};
+        applyStyle({ [property]: currentStyle[property] === valueA ? valueB : valueA });
+    };
+
+    const handleColorChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        applyStyle({ color: e.target.value });
+    };
+
+    return (
+        <div 
+            className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 w-max max-w-sm bg-white p-1 rounded-lg shadow-lg border border-slate-200 flex items-center space-x-1 text-slate-700 flex-wrap z-30"
+            onMouseDown={(e) => e.preventDefault()} // Empêche le onBlur du textarea
+        >
+            <button className="p-1.5 hover:bg-slate-200 rounded" title="Gras" onClick={() => toggleStyle('fontWeight', 'bold', 'normal')}><Bold size={16} /></button>
+            <button className="p-1.5 hover:bg-slate-200 rounded" title="Italique" onClick={() => toggleStyle('fontStyle', 'italic', 'normal')}><Italic size={16} /></button>
+            <button className="p-1.5 hover:bg-slate-200 rounded" title="Souligné" onClick={() => toggleStyle('textDecoration', 'underline', 'none')}><Underline size={16} /></button>
+            <button className="p-1.5 hover:bg-slate-200 rounded" title="Barré" onClick={() => toggleStyle('textDecoration', 'line-through', 'none')}><Strikethrough size={16} /></button>
+            
+            <div className="w-px h-5 bg-slate-300 mx-1"></div>
+
+            <button className="p-1.5 hover:bg-slate-200 rounded" title="Aligner à gauche" onClick={() => applyStyle({ textAlign: 'left' })}><AlignLeft size={16} /></button>
+            <button className="p-1.5 hover:bg-slate-200 rounded" title="Centrer" onClick={() => applyStyle({ textAlign: 'center' })}><AlignCenter size={16} /></button>
+            <button className="p-1.5 hover:bg-slate-200 rounded" title="Aligner à droite" onClick={() => applyStyle({ textAlign: 'right' })}><AlignRight size={16} /></button>
+            
+            <div className="w-px h-5 bg-slate-300 mx-1"></div>
+
+            <label className="p-1.5 hover:bg-slate-200 rounded cursor-pointer" title="Couleur du texte">
+                <Palette size={16} />
+                <input
+                    type="color"
+                    value={component.config.style?.color || '#000000'}
+                    onChange={handleColorChange}
+                    className="w-0 h-0 opacity-0 absolute"
+                />
+            </label>
+
+            <div className="flex-grow"></div>
+            <button onClick={onStopEditing} className="p-1.5 hover:bg-slate-200 rounded" title="Fermer"><X size={16} /></button>
+        </div>
+    );
+};
+
+
 export const ComponentRenderer: React.FC<ComponentRendererProps> = ({
-  component, isSelected, onSelect, onUpdate, onRemove, onDuplicate
+  component, isSelected, onSelect, onUpdate, onRemove, onDuplicate,
+  inlineEditingId, setInlineEditingId
 }) => {
+  const isEditingInline = component.id === inlineEditingId;
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const motionRef = useRef<HTMLDivElement>(null);
+
+
+  useEffect(() => {
+    if (isEditingInline && textareaRef.current) {
+        textareaRef.current.focus();
+        const el = textareaRef.current;
+        el.style.height = 'auto';
+        el.style.height = `${el.scrollHeight}px`;
+    }
+  }, [isEditingInline]);
+
+  // Gère le clic en dehors pour fermer l'éditeur
+  useEffect(() => {
+    if (!isEditingInline) return;
+
+    const handleClickOutside = (event: MouseEvent) => {
+        if (motionRef.current && !motionRef.current.contains(event.target as Node)) {
+            setInlineEditingId(null);
+        }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+        document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isEditingInline, setInlineEditingId]);
+  
+  const handleDoubleClick = (e: React.MouseEvent) => {
+      e.stopPropagation();
+      if (component.type === 'paragraphe' || component.type === 'h1') {
+          setInlineEditingId(component.id);
+      }
+  };
+
+  const handleTextChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    onUpdate(component.id, {
+        config: { ...component.config, value: e.target.value }
+    });
+    const el = e.target;
+    el.style.height = 'auto';
+    el.style.height = `${el.scrollHeight}px`;
+  };
 
   const renderComponentContent = () => {
     const style = {
@@ -24,15 +134,14 @@ export const ComponentRenderer: React.FC<ComponentRendererProps> = ({
         ...component.config.style,
         overflow: 'hidden',
         boxSizing: 'border-box' as const,
-        // On s'assure que les clics ne sont pas interceptés par les éléments enfants
         pointerEvents: 'none' as const,
     };
 
     switch (component.type) {
       case 'paragraphe': case 'h1':
-        return <div style={style}>{component.config.value}</div>;
+        return <div style={style}>{String(component.config.value || '')}</div>;
       case 'button':
-        return <button style={style}>{component.config.value}</button>;
+        return <button style={style}>{String(component.config.value || '')}</button>;
       case 'input': case 'inputDate': case 'inputTime':
         return <input {...component.config.attributes} style={style} readOnly />;
       case 'textarea':
@@ -60,8 +169,8 @@ export const ComponentRenderer: React.FC<ComponentRendererProps> = ({
 
   return (
     <motion.div
-      // CORRECTION : On utilise motion.div pour l'animation et le déplacement
-      drag
+      ref={motionRef}
+      drag={!isEditingInline}
       onDragEnd={(event, info) => {
         onUpdate(component.id, {
           position: {
@@ -70,25 +179,49 @@ export const ComponentRenderer: React.FC<ComponentRendererProps> = ({
           }
         });
       }}
-      dragMomentum={false} // Pour un arrêt net
+      dragMomentum={false} 
       style={{
         position: 'absolute',
         x: component.position.x,
         y: component.position.y,
         width: component.size.width,
-        height: component.size.height,
-        zIndex: isSelected ? 10 : 1,
-        cursor: 'grab',
+        height: isEditingInline ? 'auto' : component.size.height,
+        minHeight: isEditingInline ? component.size.height : undefined,
+        zIndex: isSelected ? (isEditingInline ? 20 : 10) : 1,
+        cursor: isEditingInline ? 'default' : 'grab',
       }}
       whileDrag={{ cursor: 'grabbing' }}
       onMouseDown={onSelect}
-      className={`group transition-all duration-200 ${isSelected ? 'outline outline-2 outline-offset-2 outline-blue-500' : ''}`}
+      onDoubleClick={handleDoubleClick}
+      className={`group transition-all duration-200 ${isSelected && !isEditingInline ? 'outline outline-2 outline-offset-2 outline-blue-500' : ''}`}
     >
-      <div className="w-full h-full">
-        {renderComponentContent()}
+      {isEditingInline && (
+        <InlineEditorToolbar
+            component={component}
+            onUpdate={onUpdate}
+            onStopEditing={() => setInlineEditingId(null)}
+        />
+      )}
+      <div className="w-full h-full relative">
+        {isEditingInline ? (
+            <textarea
+                ref={textareaRef}
+                value={String(component.config.value || '')}
+                onChange={handleTextChange}
+                onKeyDown={(e) => {
+                    if (e.key === 'Escape') {
+                        setInlineEditingId(null);
+                    }
+                }}
+                className="w-full h-full p-0 m-0 border-none outline-none focus:ring-0 resize-none bg-transparent block"
+                style={{ ...component.config.style, cursor: 'text' }}
+            />
+        ) : (
+            renderComponentContent()
+        )}
       </div>
 
-      {isSelected && (
+      {isSelected && !isEditingInline && (
         <div className="absolute -top-7 left-0 flex items-center space-x-1 bg-blue-600 text-white px-2 py-1 rounded text-xs z-20">
           <span>{component.type}</span>
           <button onClick={() => onDuplicate(component.id)} className="ml-2 hover:bg-blue-700 p-0.5 rounded" title="Dupliquer"><Copy size={14} /></button>
@@ -98,3 +231,4 @@ export const ComponentRenderer: React.FC<ComponentRendererProps> = ({
     </motion.div>
   );
 };
+

@@ -18,6 +18,8 @@ interface CanvasProps {
   onAddComponent: (type: string, config: ComponentConfig, size: {width: number, height: number}, position?: { x: number; y: number }) => string;
   currentPage?: ScriptPage;
   onUpdatePage: (updates: Partial<ScriptPage>) => void;
+  inlineEditingId: string | null;
+  setInlineEditingId: (id: string | null) => void;
 }
 
 export const Canvas: React.FC<CanvasProps> = ({
@@ -31,6 +33,8 @@ export const Canvas: React.FC<CanvasProps> = ({
   onAddComponent,
   currentPage,
   onUpdatePage,
+  inlineEditingId,
+  setInlineEditingId,
 }) => {
   const canvasRef = useRef<HTMLDivElement>(null);
   
@@ -77,6 +81,7 @@ export const Canvas: React.FC<CanvasProps> = ({
   const handleCanvasClick = (e: React.MouseEvent) => {
     if (e.target === e.currentTarget) {
       onSelectComponent(null);
+      setInlineEditingId(null);
     }
   };
 
@@ -144,9 +149,6 @@ export const Canvas: React.FC<CanvasProps> = ({
             width: canvasWidth,
             height: canvasHeight,
             backgroundColor: currentPage?.backgroundColor || '#ffffff',
-            backgroundImage: currentPage?.backgroundImage ? `url(${currentPage.backgroundImage})` : 'none',
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
           }}
           onClick={handleCanvasClick}
         >
@@ -169,8 +171,8 @@ export const Canvas: React.FC<CanvasProps> = ({
               onUpdate={onUpdateComponent}
               onRemove={onRemoveComponent}
               onDuplicate={onDuplicateComponent}
-              canvasWidth={canvasWidth}
-              canvasHeight={canvasHeight}
+              inlineEditingId={inlineEditingId}
+              setInlineEditingId={setInlineEditingId}
             />
           ))}
 

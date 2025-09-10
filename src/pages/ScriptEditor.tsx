@@ -44,6 +44,7 @@ export const ScriptEditor: React.FC = () => {
   const [isPreviewMode, setIsPreviewMode] = useState(false);
   const [device, setDevice] = useState<'mobile' | 'tablet' | 'desktop'>('desktop');
   const [activePanel, setActivePanel] = useState<string>('pages');
+  const [inlineEditingId, setInlineEditingId] = useState<string | null>(null);
 
   // Logique de chargement, qui dépend maintenant du `isLoading` du contexte
   useEffect(() => {
@@ -85,21 +86,26 @@ export const ScriptEditor: React.FC = () => {
       });
   }, [setScriptWithHistory]);
 
-  const addComponent = useCallback((type: string, config: ComponentConfig, size: {width: number, height: number}, position?: { x: number; y: number }) => {
-    if (!currentPageId || !script) return '';
-    const newComponent: Component = {
-      id: generateId(), type, config, size, pageId: currentPageId,
-      position: position || { x: 50, y: 50 },
-    };
-    handleSetScript(prev => ({ ...prev, components: [...prev.components, newComponent] }));
-    setSelectedComponentId(newComponent.id);
-    return newComponent.id;
-  }, [currentPageId, script, handleSetScript]);
+    const addComponent = useCallback((type: string, config: ComponentConfig, size: {width: number, height: number}, position?: { x: number; y: number }) => {
+        if (!currentPageId || !script) return '';
+        const newComponent: Component = {
+            id: generateId(), type, config, size, pageId: currentPageId,
+            position: position || { x: 50, y: 50 },
+        };
+        handleSetScript(prev => ({ ...prev, components: [...prev.components, newComponent] }));
+        setSelectedComponentId(newComponent.id);
 
-  const updateComponent = useCallback((id: string, updates: Partial<Component>) => {
-    if (!script) return;
-    handleSetScript(prev => ({ ...prev, components: prev.components.map(c => c.id === id ? { ...c, ...updates } : c) }));
-  }, [script, handleSetScript]);
+        // Ouvre le panneau des propriétés à l'ajout
+        setActivePanel('properties');
+
+        return newComponent.id;
+    }, [currentPageId, script, handleSetScript]);
+
+
+    const updateComponent = useCallback((id: string, updates: Partial<Component>) => {
+        if (!script) return;
+        handleSetScript(prev => ({ ...prev, components: prev.components.map(c => c.id === id ? { ...c, ...updates } : c) }));
+    }, [script, handleSetScript]);
   
   const removeComponent = useCallback((id: string) => {
     if (!script) return;
@@ -119,6 +125,13 @@ export const ScriptEditor: React.FC = () => {
          handleSetScript(prev => ({ ...prev, components: [...prev.components, newComponent] }));
      }
   }, [script, handleSetScript]);
+
+    const handleSelectComponent = (id: string | null) => {
+        if (id !== selectedComponentId && inlineEditingId) {
+            setInlineEditingId(null);
+        }
+        setSelectedComponentId(id);
+    };
 
   if (isLoading || !script) {
     return <div className="flex items-center justify-center h-screen bg-slate-100 text-slate-600">Chargement de l'éditeur...</div>;
@@ -145,7 +158,20 @@ export const ScriptEditor: React.FC = () => {
             {isPreviewMode ? (
               <PreviewPane script={script} currentPageId={currentPageId || ''} device={device} onNavigateToPage={setCurrentPageId} />
             ) : (
-              <Canvas components={currentPageComponents} onUpdateComponent={updateComponent} onRemoveComponent={removeComponent} onDuplicateComponent={duplicateComponent} selectedComponentId={selectedComponentId} onSelectComponent={setSelectedComponentId} device={device} onAddComponent={addComponent} currentPage={currentPage} onUpdatePage={(updates) => handleSetScript(prev => ({ ...prev, pages: prev.pages.map(p => p.id === currentPageId ? {...p, ...updates} : p) }))} />
+              <Canvas 
+                components={currentPageComponents} 
+                onUpdateComponent={updateComponent} 
+                onRemoveComponent={removeComponent} 
+                onDuplicateComponent={duplicateComponent} 
+                selectedComponentId={selectedComponentId} 
+                onSelectComponent={handleSelectComponent} 
+                device={device} 
+                onAddComponent={addComponent} 
+                currentPage={currentPage} 
+                onUpdatePage={(updates) => handleSetScript(prev => ({ ...prev, pages: prev.pages.map(p => p.id === currentPageId ? {...p, ...updates} : p) }))}
+                inlineEditingId={inlineEditingId}
+                setInlineEditingId={setInlineEditingId}
+              />
             )}
           </div>
         </main>

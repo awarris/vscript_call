@@ -102,6 +102,7 @@ export interface ScriptPage {
   description?: string;
   isHomePage: boolean;
   backgroundColor?: string;
+  backgroundImage?: string;
   createdAt: string;
   updatedAt: string;
 }
