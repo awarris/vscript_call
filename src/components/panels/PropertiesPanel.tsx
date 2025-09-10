@@ -1,7 +1,7 @@
 // chemin: vscript_call/src/components/panels/PropertiesPanel.tsx
 
 import React from 'react';
-import { Settings, Palette, Type, Link2, AlignCenter, AlignLeft, AlignRight, Bold, Italic, Underline, Globe, Image as ImageIcon, MessageSquare } from 'lucide-react';
+import { Settings, Palette, Type, Link2, AlignCenter, AlignLeft, AlignRight, Bold, Italic, Underline, Globe, Image as ImageIcon, MessageSquare, ListChecks, Trash2 } from 'lucide-react';
 import { Component, ScriptPage, ComponentStyle } from '../../types';
 
 interface PropertiesPanelProps {
@@ -151,6 +151,60 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
   const renderTypographySection = () => (
     <TypographyEditor style={selectedComponent.config.style} onUpdateStyle={updateStyle} onToggleStyle={(...args) => toggleStyle(...args, false)} />
   );
+
+  const renderSelectOptionsSection = () => {
+    const options = selectedComponent.config.options || [];
+
+    const handleOptionChange = (index: number, field: 'label' | 'value', newValue: string) => {
+        const newOptions = [...options];
+        newOptions[index] = { ...newOptions[index], [field]: newValue };
+        updateConfig({ options: newOptions });
+    };
+
+    const handleAddOption = () => {
+        const newOptions = [...options, { label: `Option ${options.length + 1}`, value: `option${options.length + 1}` }];
+        updateConfig({ options: newOptions });
+    };
+
+    const handleRemoveOption = (index: number) => {
+        const newOptions = options.filter((_, i) => i !== index);
+        updateConfig({ options: newOptions });
+    };
+
+    return (
+        <div className="space-y-2">
+            <div className="flex items-center space-x-2 px-2 mb-1">
+                <label className="w-full text-xs font-semibold text-slate-700">Libellé</label>
+                <label className="w-full text-xs font-semibold text-slate-700">Valeur</label>
+                <div className="w-8"></div> {/* Espace pour l'icône de suppression */}
+            </div>
+            {options.map((option: { label: string, value: string }, index: number) => (
+                <div key={index} className="flex items-center space-x-2 p-2 bg-slate-50 rounded">
+                    <input
+                        type="text"
+                        placeholder="Label"
+                        value={option.label}
+                        onChange={(e) => handleOptionChange(index, 'label', e.target.value)}
+                        className="w-full px-2 py-1 text-sm border border-slate-300 rounded-md"
+                    />
+                    <input
+                        type="text"
+                        placeholder="Value"
+                        value={option.value}
+                        onChange={(e) => handleOptionChange(index, 'value', e.target.value)}
+                        className="w-full px-2 py-1 text-sm border border-slate-300 rounded-md"
+                    />
+                    <button onClick={() => handleRemoveOption(index)} className="p-1 text-red-500 hover:bg-red-100 rounded flex-shrink-0">
+                        <Trash2 size={14} />
+                    </button>
+                </div>
+            ))}
+            <button onClick={handleAddOption} className="w-full mt-2 px-3 py-2 text-sm bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200">
+                Ajouter une option
+            </button>
+        </div>
+    );
+};
   
   const renderImageAppearanceSection = () => {
         const style = selectedComponent.config.style || {};
@@ -256,7 +310,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
     </div>
   );
 
-  const isInputType = ['input', 'inputDate', 'inputTime', 'textarea'].includes(selectedComponent.type);
+  const isInputType = ['input', 'inputDate', 'inputTime', 'textarea', 'select'].includes(selectedComponent.type);
 
   return (
     <div className="space-y-6">
@@ -287,6 +341,12 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
         </Section>
       )}
 
+      {selectedComponent.type === 'select' && (
+        <Section title="Options" icon={ListChecks}>
+            {renderSelectOptionsSection()}
+        </Section>
+      )}
+
       {(['paragraphe', 'h1', 'button', 'checkbox'].includes(selectedComponent.type) || isInputType) && (
         <Section title="Style du champ" icon={Type}>
             {renderTypographySection()}
@@ -297,7 +357,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
         {selectedComponent.type === 'calculator' && renderCalculatorStyles()}
         {selectedComponent.type === 'image' && renderImageAppearanceSection()}
         {isInputType && renderInputAppearanceSection()}
-        {!['calculator', 'image', ...['input', 'inputDate', 'inputTime', 'textarea']].includes(selectedComponent.type) && renderAppearanceSection()}
+        {!['calculator', 'image', ...['input', 'inputDate', 'inputTime', 'textarea', 'select']].includes(selectedComponent.type) && renderAppearanceSection()}
       </Section>
 
       <Section title="Disposition" icon={Settings}>
