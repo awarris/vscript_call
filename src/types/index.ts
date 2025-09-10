@@ -31,8 +31,7 @@ export interface ComponentConfig {
   style?: ComponentStyle;
   labelStyle?: ComponentStyle; // Styles spécifiques pour le libellé
   targetPageId?: string;
-  visible?: boolean; // NOUVEAU: Pour la visibilité par défaut
-  targetComponentId?: string; // NOUVEAU: Pour lier un composant à un autre (ex: checkbox de visibilité)
+  visible?: boolean; // Pour la visibilité par défaut
   // Permet de stocker n'importe quelle autre propriété (src, alt, options, attributes, etc.)
   [key: string]: any;
 }
@@ -47,7 +46,7 @@ export interface Component {
   position: { x: number; y: number };
   size: { width: number; height: number };
   pageId: string;
-  parentId?: string; // NOUVEAU: Pour indiquer si un composant est dans un conteneur
+  parentId?: string;
 }
 
 export type WorkflowTriggerType =
@@ -103,7 +102,7 @@ export interface GlobalVariable {
   type: 'string' | 'number' | 'boolean';
   defaultValue: any;
   description?: string;
-  componentId?: string; // Ajout pour lier à un composant
+  componentId?: string;
 }
 
 export interface ComponentLibraryItem {
@@ -155,3 +154,4 @@ export interface HistoryState<T> {
   present: T;
   future: T[];
 }
+

@@ -192,7 +192,7 @@ export const ScriptEditor: React.FC = () => {
       case 'pages': return <PageManager script={script} setScript={setScript} currentPageId={currentPageId} setCurrentPageId={setCurrentPageId} />;
       case 'workflows': return <WorkflowPanel script={script} setScript={setScript} currentPageId={currentPageId} />;
       case 'variables': return <VariablesPanel script={script} setScript={setScript} />;
-      case 'properties': return <PropertiesPanel selectedComponent={selectedComponent} onUpdateComponent={handleUpdateComponent} pages={script.pages} currentPageId={currentPageId} script={script} setActivePanel={setActivePanel} />;
+      case 'properties': return <PropertiesPanel selectedComponent={selectedComponent} onUpdateComponent={handleUpdateComponent} pages={script.pages} currentPageId={currentPageId} script={script} setActivePanel={setActivePanel} componentsOnPage={componentsOnCurrentPage} />;
       default: return null;
     }
   };

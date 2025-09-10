@@ -5,14 +5,14 @@ import * as Icons from 'lucide-react';
 import { useDrag } from 'react-dnd';
 import { ComponentLibraryItem, ComponentConfig } from '../../types';
 
-// Votre liste complète d'objets est directement intégrée ici.
+// La liste des outils, sans le 'visibilityCheckbox'
 const newTools = [
   { "type": "paragraphe", "value": "Votre texte ici...", "style": { "padding": "10px", "fontSize": "16px", "lineHeight": "1.5", "color": "#222" } },
   { "type": "h1", "value": "Titre de niveau 1", "style": { "fontSize": "2.25rem", "fontWeight": "700", "color": "#1e293b" } },
   { "type": "button", "value": "Cliquez ici", "style": { "backgroundColor": "#3b82f6", "color": "white", "border": "none", "padding": "12px 24px", "textAlign": "center", "fontSize": "16px", "borderRadius": "8px", "cursor": "pointer" } },
   { "type": "input", "value": "", "attributes": { "type": "text", "placeholder": "Saisissez du texte" }, "style": { "padding": "8px", "border": "1px solid #cbd5e1", "borderRadius": "6px", "width": "200px" } },
   { "type": "textarea", "value": "", "attributes": { "rows": 4, "placeholder": "Écrivez votre message..." }, "style": { "padding": "10px", "border": "1px solid #cbd5e1", "borderRadius": "6px", "width": "300px", "height": "100px" } },
-  { "type": "image", "src": "https://picsum.photos/200/300", "alt": "placeholder image", "style": { "width": "300px", "height": "200px", "objectFit": "cover" } },
+  { "type": "image", "src": "https://via.placeholder.com/300x200.png?text=Image", "alt": "placeholder image", "style": { "width": "300px", "height": "200px", "objectFit": "cover" } },
   { "type": "select", "name": "listederoulante", "style": { "padding": "10px 12px", "border": "1px solid #d1d5db", "borderRadius": "6px", "width": "220px" }, "options": [{ "value": "option1", "label": "Option 1" }, { "value": "option2", "label": "Option 2" }] },
   { "type": "checkbox", "label": "Accepter les conditions", "checked": false, "style": {} },
   { "type": "inputDate", "value": "", "style": { "border": "1px solid #cbd5e1", "padding": "8px", "borderRadius": "6px" } },
@@ -24,7 +24,6 @@ const newTools = [
   { "type": "container", "style": { "width": "400px", "height": "300px", "backgroundColor": "#ffffff", "border": "1px solid #e2e8f0", "borderRadius": "8px", "padding": "10px" } },
 ];
 
-// On transforme la liste en un format que notre application comprend.
 const componentLibrary: ComponentLibraryItem[] = newTools.map(tool => {
   const typeToIcon: { [key: string]: string } = {
     paragraphe: 'Pilcrow', h1: 'Heading1', button: 'MousePointerClick',
@@ -48,6 +47,7 @@ const componentLibrary: ComponentLibraryItem[] = newTools.map(tool => {
   const config: ComponentConfig = {
     ...restOfTool,
     style: cleanStyle,
+    visible: true, // Tous les composants sont visibles par défaut
   };
 
   return {
@@ -64,8 +64,6 @@ const componentLibrary: ComponentLibraryItem[] = newTools.map(tool => {
   };
 });
 
-
-// Le reste du composant (logique d'affichage) reste inchangé
 const DraggableComponent: React.FC<{ item: ComponentLibraryItem }> = ({ item }) => {
   const [{ isDragging }, drag] = useDrag(() => ({
     type: 'new-component',
@@ -119,3 +117,4 @@ export const ComponentPalette: React.FC<ComponentPaletteProps> = () => {
     </div>
   );
 };
+

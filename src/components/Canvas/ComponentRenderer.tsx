@@ -112,14 +112,14 @@ export const ComponentRenderer: React.FC<ComponentRendererProps> = (props) => {
 
   const handleDoubleClick = (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (['paragraphe', 'h1', 'textarea', 'checkbox', 'input'].includes(component.type)) {
+    if (['paragraphe', 'h1', 'textarea', 'checkbox', 'visibilityCheckbox', 'input'].includes(component.type)) {
       setInlineEditingId(component.id);
     }
   };
 
   const handleTextChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const newText = e.target.value;
-    const prop = component.type === 'checkbox' ? 'label' : 'value';
+    const prop = ['checkbox', 'visibilityCheckbox'].includes(component.type) ? 'label' : 'value';
     onUpdateComponent(component.id, { config: { ...component.config, [prop]: newText } });
     const el = e.target;
     el.style.height = 'auto';
@@ -157,7 +157,9 @@ export const ComponentRenderer: React.FC<ComponentRendererProps> = (props) => {
         }
         return <div style={{ ...style, display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#e2e8f0', pointerEvents: 'none' }}>Contenu Iframe</div>;
       case 'select': return <select style={style} disabled> {(component.config.options || []).map((opt: any, i: number) => (<option key={i} value={opt.value}>{opt.label}</option>))} </select>;
-      case 'checkbox': return <div style={{ ...style, display: 'flex', alignItems: 'center', pointerEvents: 'none' }}> <input type="checkbox" checked={component.config.checked} readOnly style={{ marginRight: '8px' }} /> <span style={{ color: component.config.style?.color, fontFamily: component.config.style?.fontFamily }}> {component.config.label} </span> </div>;
+      case 'checkbox':
+      case 'visibilityCheckbox':
+        return <div style={{ ...style, display: 'flex', alignItems: 'center', pointerEvents: 'none' }}> <input type="checkbox" checked={component.config.checked} readOnly style={{ marginRight: '8px' }} /> <span style={{ color: component.config.style?.color, fontFamily: component.config.style?.fontFamily }}> {component.config.label} </span> </div>;
       case 'calculator': return <div style={{ pointerEvents: 'none' }}><StaticCalculator styleConfig={component.config.style as ComponentStyle} /></div>;
       case 'container':
         const children = allComponents ? allComponents.filter(c => c.parentId === component.id) : [];
@@ -185,7 +187,7 @@ export const ComponentRenderer: React.FC<ComponentRendererProps> = (props) => {
     }
   };
 
-  const editingText = component.type === 'checkbox' ? component.config.label : component.config.value;
+  const editingText = ['checkbox', 'visibilityCheckbox'].includes(component.type) ? component.config.label : component.config.value;
 
   return (
     <motion.div
@@ -208,6 +210,7 @@ export const ComponentRenderer: React.FC<ComponentRendererProps> = (props) => {
         height: 'auto',
         zIndex: isSelected ? 20 : (component.parentId ? 15 : 10),
         cursor: 'grab',
+        opacity: component.config.visible !== false ? 1 : 0.5 // MISE À JOUR ICI
       }}
       whileDrag={{ cursor: 'grabbing' }}
       onMouseDown={handleSelect}

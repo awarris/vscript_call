@@ -1,14 +1,17 @@
-// chemin: vscript_call/src/components/panels/PropertiesPanel.tsx
+// chemin: src/components/panels/PropertiesPanel.tsx
 
 import React from 'react';
-import { Settings, Palette, Type, Link2, AlignCenter, AlignLeft, AlignRight, Bold, Italic, Underline, Globe, Image as ImageIcon, MessageSquare, ListChecks, Trash2 } from 'lucide-react';
-import { Component, ScriptPage, ComponentStyle } from '../../types';
+import { Settings, Palette, Type, Link2, AlignCenter, AlignLeft, AlignRight, Bold, Italic, Underline, Globe, Image as ImageIcon, MessageSquare, ListChecks, Trash2, Zap, Eye } from 'lucide-react';
+import { Component, ScriptPage, ComponentStyle, Script } from '../../types';
 
 interface PropertiesPanelProps {
   selectedComponent?: Component | null;
   onUpdateComponent: (id: string, updates: Partial<Component>) => void;
   pages: ScriptPage[];
   currentPageId: string;
+  script: Script;
+  setActivePanel: (panelId: string) => void;
+  componentsOnPage: Component[];
 }
 
 export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
@@ -16,6 +19,8 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
   onUpdateComponent,
   pages,
   currentPageId,
+  script,
+  setActivePanel,
 }) => {
   if (!selectedComponent) {
     return (
@@ -309,6 +314,48 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
         <NumberInput label="Hauteur" value={selectedComponent.size.height} onChange={val => updateSize('height', val)} />
     </div>
   );
+  
+  const renderEventsSection = () => {
+    const componentWorkflows = script.workflowRules.filter(
+      (rule) => rule.trigger.componentId === selectedComponent.id && rule.pageId === currentPageId
+    );
+
+    return (
+      <div>
+        {componentWorkflows.map((wf) => (
+          <div key={wf.id} className="text-sm p-2 bg-slate-50 rounded-md">
+            <span className="font-semibold">{wf.trigger.type}</span> → {wf.name}
+          </div>
+        ))}
+        {componentWorkflows.length === 0 && (
+          <p className="text-xs text-slate-500 text-center py-2">Aucun événement pour ce composant.</p>
+        )}
+        <button
+          onClick={() => setActivePanel('workflows')}
+          className="w-full mt-2 px-3 py-2 text-sm bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200"
+        >
+          Ajouter un événement
+        </button>
+      </div>
+    );
+  };
+  
+  const renderVisibilitySection = () => (
+    <div>
+        <div className="flex items-center justify-between">
+            <label className="text-sm font-semibold text-slate-700">Visible par défaut</label>
+            <input
+                type="checkbox"
+                checked={selectedComponent.config.visible !== false}
+                onChange={(e) => updateConfig({ visible: e.target.checked })}
+                className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+            />
+        </div>
+        <p className="text-xs text-slate-500 mt-1">
+            Si décoché, cet élément sera caché au lancement de la page.
+        </p>
+    </div>
+  );
 
   const isInputType = ['input', 'inputDate', 'inputTime', 'textarea', 'select'].includes(selectedComponent.type);
 
@@ -359,9 +406,17 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
         {isInputType && renderInputAppearanceSection()}
         {!['calculator', 'image', ...['input', 'inputDate', 'inputTime', 'textarea', 'select']].includes(selectedComponent.type) && renderAppearanceSection()}
       </Section>
+      
+      <Section title="Visibilité" icon={Eye}>
+          {renderVisibilitySection()}
+      </Section>
 
       <Section title="Disposition" icon={Settings}>
         {renderLayoutSection()}
+      </Section>
+      
+      <Section title="Événements" icon={Zap}>
+        {renderEventsSection()}
       </Section>
     </div>
   );

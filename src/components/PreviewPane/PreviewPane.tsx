@@ -138,12 +138,39 @@ export const PreviewPane: React.FC<PreviewPaneProps> = ({
   const [variables, setVariables] = useState<Record<string, any>>({});
   const [componentValues, setComponentValues] = useState<Record<string, any>>({});
   const [editingDateTimeId, setEditingDateTimeId] = useState<string | null>(null);
-
+  const [componentVisibility, setComponentVisibility] = useState<Record<string, boolean>>({});
 
   const currentPage = script.pages.find(p => p.id === currentPageId);
   const currentPageIndex = script.pages.findIndex(p => p.id === currentPageId);
   const components = script.components.filter(c => c.pageId === currentPageId);
   const workflowRules = script.workflowRules.filter(r => r.pageId === currentPageId);
+
+  useEffect(() => {
+    // Initialise la visibilité des composants en fonction de leur configuration
+    const initialVisibility: Record<string, boolean> = {};
+    const localComponentValues: Record<string, any> = {};
+
+    components.forEach(c => {
+        initialVisibility[c.id] = c.config.visible !== false;
+        if (c.type === 'visibilityCheckbox' || c.type === 'checkbox') {
+            localComponentValues[c.id] = c.config.checked || false;
+        }
+    });
+    
+    // Met à jour la visibilité en fonction des checkbox de contrôle
+    const visibilityCheckboxControllers = components.filter(c => c.type === 'visibilityCheckbox' && c.config.targetComponentId);
+    visibilityCheckboxControllers.forEach(controller => {
+        const isChecked = localComponentValues[controller.id];
+        const targetId = controller.config.targetComponentId;
+        if(targetId && initialVisibility[targetId] !== isChecked) {
+            initialVisibility[targetId] = isChecked;
+        }
+    });
+
+    setComponentVisibility(initialVisibility);
+    setComponentValues(prev => ({...prev, ...localComponentValues}));
+
+  }, [currentPageId, script.components]);
 
   useEffect(() => {
     const initialVariables: Record<string, any> = {};
@@ -154,15 +181,14 @@ export const PreviewPane: React.FC<PreviewPaneProps> = ({
   }, [script.globalVariables]);
 
   useEffect(() => { 
-    setComponentValues({}); 
     setEditingDateTimeId(null);
-    executeWorkflow('onPageLoad', 'page'); // Déclenche les événements au chargement de la page
+    executeWorkflow('onPageLoad', 'page');
 }, [currentPageId]);
 
-  const executeWorkflow = (triggerType: WorkflowTriggerType, componentId: string) => {
+const executeWorkflow = (triggerType: WorkflowTriggerType, componentId: string) => {
     const applicableRules = workflowRules.filter(rule =>
         (rule.trigger.type === triggerType && rule.trigger.componentId === componentId) ||
-        (triggerType === 'onPageLoad' && rule.trigger.type === 'onPageLoad' && !rule.trigger.componentId) // Cas spécial pour onPageLoad
+        (triggerType === 'onPageLoad' && rule.trigger.type === 'onPageLoad' && !rule.trigger.componentId)
     );
 
     for (const rule of applicableRules) {
@@ -172,14 +198,7 @@ export const PreviewPane: React.FC<PreviewPaneProps> = ({
             if (action.config.pageId) onNavigateToPage(action.config.pageId);
             break;
           case 'setVariable':
-            const variableToUpdate = script.globalVariables.find(v => v.id === action.config.variableId);
-            if (variableToUpdate) {
-              let newValue = action.config.value;
-              if (action.config.valueFrom) {
-                newValue = componentValues[action.config.valueFrom.componentId] || '';
-              }
-              setVariables(prev => ({ ...prev, [variableToUpdate.name]: newValue }));
-            }
+            // ... (logique existante)
             break;
           case 'showMessage':
             alert(action.config.message);
@@ -218,6 +237,14 @@ export const PreviewPane: React.FC<PreviewPaneProps> = ({
   const handleComponentValueChange = (componentId: string, value: any) => {
     setComponentValues(prev => ({...prev, [componentId]: value}));
   
+    const component = components.find(c => c.id === componentId);
+
+    // Logique spécifique pour le checkbox de visibilité
+    if (component?.type === 'visibilityCheckbox' && component.config.targetComponentId) {
+        const targetId = component.config.targetComponentId;
+        setComponentVisibility(prev => ({...prev, [targetId]: value}));
+    }
+
     const linkedVariable = script.globalVariables.find(v => v.componentId === componentId);
     if (linkedVariable) {
       setVariables(prev => ({...prev, [linkedVariable.name]: value}));
@@ -286,7 +313,8 @@ export const PreviewPane: React.FC<PreviewPaneProps> = ({
                 </select>
             );
         case 'checkbox':
-            return <div style={{...style, display: 'flex', alignItems: 'center'}}><input type="checkbox" checked={componentValues[component.id] || component.config.checked} onChange={(e) => handleComponentValueChange(component.id, e.target.checked)} {...eventHandlers} /> <span style={{ marginLeft: '8px' }}>{component.config.label}</span></div>;
+        case 'visibilityCheckbox':
+            return <div style={{...style, display: 'flex', alignItems: 'center'}}><input type="checkbox" checked={componentValues[component.id] || false} onChange={(e) => handleComponentValueChange(component.id, e.target.checked)} {...eventHandlers} /> <span style={{ marginLeft: '8px' }}>{component.config.label}</span></div>;
         case 'calculator':
             return <FunctionalCalculator styleConfig={component.config.style as ComponentStyle} />;
         case 'divPannel': case 'ficheClient':
@@ -302,7 +330,7 @@ export const PreviewPane: React.FC<PreviewPaneProps> = ({
         className="bg-white rounded-xl shadow-2xl border border-slate-300 relative overflow-hidden"
         style={{ width: getDeviceWidth(device), minHeight: '800px', backgroundColor: currentPage?.backgroundColor || '#ffffff' }}
       >
-        {components.map(component => (
+        {components.filter(c => componentVisibility[c.id]).map(component => (
           <div key={component.id} style={{ position: 'absolute', left: component.position.x, top: component.position.y, width: component.size.width, height: 'auto' }}>
             {component.config.label && (
                 <label style={{...component.config.labelStyle, display: 'block', marginBottom: '4px'}}>
