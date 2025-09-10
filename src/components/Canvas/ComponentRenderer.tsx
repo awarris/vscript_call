@@ -7,6 +7,7 @@ import {
     X, Copy, Trash2, Palette, Delete, Calendar, Clock
 } from 'lucide-react';
 import { Component, ComponentStyle } from '../../types';
+import { validateComponentPosition } from '../../utils/helpers';
 
 // Sous-composant pour le rendu de la calculatrice (statique et stylisable)
 const StaticCalculator = ({ styleConfig }: { styleConfig: ComponentStyle }) => {
@@ -71,13 +72,14 @@ interface ComponentRendererProps {
   onDuplicateComponent: (id: string) => void;
   inlineEditingId: string | null;
   setInlineEditingId: (id: string | null) => void;
+  canvasSize: { width: number; height: number };
 }
 
 export const ComponentRenderer: React.FC<ComponentRendererProps> = (props) => {
   const {
     component, allComponents, selectedComponentId, onSelectComponent,
-    onUpdateComponent, onUpdateComponentPosition, onRemoveComponent,
-    onDuplicateComponent, inlineEditingId, setInlineEditingId
+    onUpdateComponent, onRemoveComponent, onDuplicateComponent, 
+    inlineEditingId, setInlineEditingId, canvasSize
   } = props;
 
   const isSelected = component.id === selectedComponentId;
@@ -173,11 +175,12 @@ export const ComponentRenderer: React.FC<ComponentRendererProps> = (props) => {
                 selectedComponentId={selectedComponentId}
                 onSelectComponent={onSelectComponent}
                 onUpdateComponent={onUpdateComponent}
-                onUpdateComponentPosition={onUpdateComponentPosition}
+                onUpdateComponentPosition={props.onUpdateComponentPosition}
                 onRemoveComponent={onRemoveComponent}
                 onDuplicateComponent={onDuplicateComponent}
                 inlineEditingId={inlineEditingId}
                 setInlineEditingId={setInlineEditingId}
+                canvasSize={canvasSize}
               />
             ))}
           </div>
@@ -193,13 +196,19 @@ export const ComponentRenderer: React.FC<ComponentRendererProps> = (props) => {
     <motion.div
       ref={motionRef}
       drag
+      dragConstraints={{
+        left: 0,
+        top: 0,
+        right: canvasSize.width - component.size.width,
+        bottom: canvasSize.height - component.size.height,
+      }}
       onDragEnd={(event, info) => {
-        const delta = { x: info.offset.x, y: info.offset.y };
-        if (component.parentId) {
-          onUpdateComponent(component.id, { position: { x: component.position.x + delta.x, y: component.position.y + delta.y } });
-        } else {
-          onUpdateComponentPosition(component.id, delta);
-        }
+        const newPosition = {
+            x: component.position.x + info.offset.x,
+            y: component.position.y + info.offset.y
+        };
+        const validated = validateComponentPosition(newPosition, component.size, canvasSize);
+        onUpdateComponent(component.id, { position: validated });
       }}
       dragMomentum={false}
       style={{
@@ -210,7 +219,7 @@ export const ComponentRenderer: React.FC<ComponentRendererProps> = (props) => {
         height: 'auto',
         zIndex: isSelected ? 20 : (component.parentId ? 15 : 10),
         cursor: 'grab',
-        opacity: component.config.visible !== false ? 1 : 0.5 // MISE À JOUR ICI
+        opacity: component.config.visible !== false ? 1 : 0.5
       }}
       whileDrag={{ cursor: 'grabbing' }}
       onMouseDown={handleSelect}

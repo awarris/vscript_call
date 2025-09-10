@@ -11,10 +11,6 @@ interface ChatPanelProps {
 }
 
 export const ChatPanel: React.FC<ChatPanelProps> = ({ isOpen, onClose, script }) => {
-  if (!isOpen) {
-    return null;
-  }
-
   const conversation = script?.conversation || [
     { role: 'ia', content: "Bonjour ! Comment puis-je vous aider à construire votre script aujourd'hui ?" },
     { role: 'user', content: "Je voudrais créer une page de contact." },
@@ -22,7 +18,13 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ isOpen, onClose, script })
   ];
 
   return (
-    <div className="w-96 bg-white dark:bg-gray-vs-800 text-gray-vs-800 dark:text-white flex flex-col shadow-2xl z-40 animate-slide-in-from-left border-r border-gray-vs-200 dark:border-gray-vs-700">
+    // Le panneau est maintenant positionné en "absolute" pour flotter au-dessus du contenu.
+    // La transition sur "transform" crée l'effet de glissement.
+    <div 
+      className={`absolute top-0 left-0 h-full w-96 bg-white dark:bg-gray-vs-800 text-gray-vs-800 dark:text-white flex flex-col shadow-2xl z-40 border-r border-gray-vs-200 dark:border-gray-vs-700 transition-transform duration-300 ease-in-out ${
+        isOpen ? 'translate-x-0' : '-translate-x-full'
+      }`}
+    >
       {/* Header */}
       <div className="flex items-center justify-between p-4 border-b border-gray-vs-200 dark:border-gray-vs-700 flex-shrink-0">
         <div className="flex items-center space-x-3">

@@ -1,27 +1,11 @@
 // chemin: vscript_call/src/utils/helpers.ts
 
-import { Component } from '../types';
-
 /**
  * Génère un identifiant unique basé sur la date actuelle et une chaîne aléatoire.
  * @returns Une chaîne de caractères unique.
  */
 export const generateId = (): string => {
   return `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-};
-
-/**
- * Retourne la largeur en pixels pour un type d'appareil donné.
- * @param device - Le type d'appareil ('mobile', 'tablet', 'desktop').
- * @returns La largeur en pixels.
- */
-export const getDeviceWidth = (device: 'mobile' | 'tablet' | 'desktop'): number => {
-  switch (device) {
-    case 'mobile': return 375;
-    case 'tablet': return 768;
-    case 'desktop': return 1200;
-    default: return 1200;
-  }
 };
 
 /**

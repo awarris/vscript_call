@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect } from 'react';
 import { Component, Script, WorkflowTriggerType, ComponentStyle } from '../../types';
-import { getDeviceWidth } from '../../utils/helpers';
 import { File, Delete } from 'lucide-react';
 
 // Sous-composant pour la calculatrice fonctionnelle
@@ -128,12 +127,12 @@ const FunctionalCalculator: React.FC<{ styleConfig: ComponentStyle }> = ({ style
 interface PreviewPaneProps {
   script: Script;
   currentPageId: string;
-  device: 'mobile' | 'tablet' | 'desktop';
+  device: 'mobile' | 'tablet' | 'desktop'; // La prop est conservée pour la compatibilité
   onNavigateToPage: (pageId: string) => void;
 }
 
 export const PreviewPane: React.FC<PreviewPaneProps> = ({
-  script, currentPageId, device, onNavigateToPage,
+  script, currentPageId, onNavigateToPage,
 }) => {
   const [variables, setVariables] = useState<Record<string, any>>({});
   const [componentValues, setComponentValues] = useState<Record<string, any>>({});
@@ -146,7 +145,6 @@ export const PreviewPane: React.FC<PreviewPaneProps> = ({
   const workflowRules = script.workflowRules.filter(r => r.pageId === currentPageId);
 
   useEffect(() => {
-    // Initialise la visibilité des composants en fonction de leur configuration
     const initialVisibility: Record<string, boolean> = {};
     components.forEach(c => {
         initialVisibility[c.id] = c.config.visible !== false;
@@ -303,12 +301,14 @@ const executeWorkflow = (triggerType: WorkflowTriggerType, componentId: string) 
             return <div style={{...style, border: '1px dashed red'}}>Composant inconnu: {component.type}</div>;
     }
   };
+  
+  const previewWidth = 1200; // Largeur fixe pour le mode aperçu
 
   return (
     <div className="flex-1 bg-slate-200 overflow-auto p-8 flex justify-center items-start">
       <div
         className="bg-white rounded-xl shadow-2xl border border-slate-300 relative overflow-hidden"
-        style={{ width: getDeviceWidth(device), minHeight: '800px', backgroundColor: currentPage?.backgroundColor || '#ffffff' }}
+        style={{ width: previewWidth, minHeight: '800px', backgroundColor: currentPage?.backgroundColor || '#ffffff' }}
       >
         {components
           .filter(c => componentVisibility[c.id]) // Filtre les composants non visibles
@@ -348,4 +348,3 @@ const executeWorkflow = (triggerType: WorkflowTriggerType, componentId: string) 
     </div>
   );
 };
-

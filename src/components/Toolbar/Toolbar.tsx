@@ -3,9 +3,6 @@
 import React from 'react';
 import { 
   Eye, 
-  Smartphone, 
-  Tablet, 
-  Monitor, 
   Upload, 
   Download,
   Undo, 
@@ -26,8 +23,6 @@ interface ToolbarProps {
   onImportScript: (script: Script) => void;
   isPreviewMode: boolean;
   onTogglePreview: () => void;
-  currentDevice: 'mobile' | 'tablet' | 'desktop';
-  onDeviceChange: (device: 'mobile' | 'tablet' | 'desktop') => void;
   undo: () => void;
   redo: () => void;
   canUndo: boolean;
@@ -44,8 +39,6 @@ export const Toolbar: React.FC<ToolbarProps> = ({
   onImportScript,
   isPreviewMode,
   onTogglePreview,
-  currentDevice,
-  onDeviceChange,
   undo,
   redo,
   canUndo,
@@ -55,13 +48,6 @@ export const Toolbar: React.FC<ToolbarProps> = ({
   theme,
   setTheme,
 }) => {
-
-  // Configuration des boutons de prévisualisation par appareil
-  const deviceButtons = [
-    { key: 'mobile' as const, icon: Smartphone, label: 'Mobile (375px)' },
-    { key: 'tablet' as const, icon: Tablet, label: 'Tablette (768px)' },
-    { key: 'desktop' as const, icon: Monitor, label: 'Bureau (1200px)' }
-  ];
 
   // Gestion de l'importation d'un script via un fichier JSON
   const handleImport = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -129,25 +115,8 @@ export const Toolbar: React.FC<ToolbarProps> = ({
         </button>
       </div>
 
-      {/* Section Centrale : Sélection de la taille de l'aperçu */}
-      {!isPreviewMode && (
-        <div className="flex items-center bg-gray-vs-100 dark:bg-gray-vs-700 rounded-lg p-1">
-          {deviceButtons.map(({ key, icon: Icon, label }) => (
-            <button
-              key={key}
-              onClick={() => onDeviceChange(key)}
-              className={`p-2 rounded-md transition-all duration-200 ${
-                currentDevice === key
-                  ? 'bg-white dark:bg-gray-vs-600 shadow-sm text-blue-vs-600 dark:text-blue-vs-300'
-                  : 'text-gray-vs-600 dark:text-gray-vs-300 hover:text-gray-vs-900 dark:hover:text-white'
-              }`}
-              title={label}
-            >
-              <Icon size={18} />
-            </button>
-          ))}
-        </div>
-      )}
+      {/* Section Centrale (vide maintenant) */}
+      <div className="flex-1"></div>
 
       {/* Section Droite : Actions principales et gestion de l'affichage */}
       <div className="flex items-center space-x-2">

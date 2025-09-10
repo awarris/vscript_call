@@ -4,6 +4,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
+import * as Icons from 'lucide-react';
 
 import { useScriptsContext } from '../context/ScriptsContext';
 import { useHistoryState } from '../hooks/useHistoryState';
@@ -11,11 +12,8 @@ import { Script, Component, ComponentConfig, ScriptPage } from '../types';
 import { generateId } from '../utils/helpers';
 
 // Import des composants de l'interface
-import { VerticalMenu } from '../components/layout/VerticalMenu';
-import { SidePanel } from '../components/layout/SidePanel';
 import { Toolbar } from '../components/Toolbar/Toolbar';
 import { Canvas } from '../components/Canvas/Canvas';
-import { LayersPanel } from '../components/panels/LayersPanel';
 import { PreviewPane } from '../components/PreviewPane/PreviewPane';
 import { ChatPanel } from '../components/layout/ChatPanel';
 
@@ -25,13 +23,13 @@ import { PageManager } from '../components/panels/PageManager';
 import { WorkflowPanel } from '../components/panels/WorkflowPanel';
 import { VariablesPanel } from '../components/panels/VariablesPanel';
 import { PropertiesPanel } from '../components/panels/PropertiesPanel';
+import { LayersPanel } from '../components/panels/LayersPanel';
 
 // --- Fonctions Utilitaires ---
 const isObject = (item: any): item is object => {
   return (item && typeof item === 'object' && !Array.isArray(item));
 };
 
-// Fonction pour fusionner des objets en profondeur (utile pour mettre à jour les configurations)
 const mergeDeep = <T extends object>(target: T, source: Partial<T>): T => {
   const output = { ...target };
   if (isObject(target) && isObject(source)) {
@@ -50,68 +48,54 @@ const mergeDeep = <T extends object>(target: T, source: Partial<T>): T => {
 
 /**
  * Composant principal de l'éditeur de script.
- * C'est ici que toute la logique de l'éditeur est assemblée.
  */
 export const ScriptEditor: React.FC = () => {
   const { scriptId } = useParams<{ scriptId: string }>();
   const navigate = useNavigate();
   const { getScript, updateScript } = useScriptsContext();
 
-  // Hook pour gérer l'historique (undo/redo)
   const { state: script, setState: setScript, resetState, undo, redo, canUndo, canRedo } = useHistoryState<Script | null>(null);
 
-  // États pour gérer l'interface
-  const [activePanel, setActivePanel] = useState('components');
+  const [activeTab, setActiveTab] = useState('components');
   const [currentPageId, setCurrentPageId] = useState<string>('');
   const [selectedComponentId, setSelectedComponentId] = useState<string | null>(null);
-  const [device, setDevice] = useState<'mobile' | 'tablet' | 'desktop'>('desktop');
   const [isPreviewMode, setIsPreviewMode] = useState(false);
   const [inlineEditingId, setInlineEditingId] = useState<string | null>(null);
-
-  // Nouveaux états pour la visibilité des panneaux et le thème
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [isRightPanelOpen, setIsRightPanelOpen] = useState(true);
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
 
-  // Applique la classe 'dark' à l'élément racine du HTML lorsque le thème change
   useEffect(() => {
     document.documentElement.classList.toggle('dark', theme === 'dark');
   }, [theme]);
 
-  // Chargement du script au montage du composant
   useEffect(() => {
     if (scriptId) {
       const foundScript = getScript(scriptId);
       if (foundScript) {
         resetState(foundScript);
         const homePage = foundScript.pages.find(p => p.isHomePage) || foundScript.pages[0];
-        if (homePage) {
-          setCurrentPageId(homePage.id);
-        }
+        if (homePage) setCurrentPageId(homePage.id);
       } else {
-        navigate('/'); // Redirige si le script n'est pas trouvé
+        navigate('/');
       }
     }
   }, [scriptId, getScript, navigate, resetState]);
 
-  // Sauvegarde automatique du script à chaque modification
   useEffect(() => {
     if (script && scriptId) {
       updateScript(scriptId, script);
     }
   }, [script, scriptId, updateScript]);
 
-  // Fonction pour mettre à jour une partie du script
   const handleUpdateScript = (updates: Partial<Script>) => {
     setScript(prev => prev ? { ...prev, ...updates } : null);
   };
 
-  // Récupération des données de la page et des composants courants
   const currentPage = script?.pages.find(p => p.id === currentPageId);
   const componentsOnCurrentPage = script?.components.filter(c => c.pageId === currentPageId) || [];
   const selectedComponent = script?.components.find(c => c.id === selectedComponentId) || null;
 
-  // Ajout d'un composant sur le canevas
   const handleAddComponent = (type: string, config: ComponentConfig, size: {width: number, height: number}, position?: { x: number; y: number }, parentId?: string): string => {
     const newComponent: Component = {
       id: generateId(), type, config, position: position || { x: 50, y: 50 },
@@ -119,73 +103,50 @@ export const ScriptEditor: React.FC = () => {
     };
     setScript(prev => prev ? { ...prev, components: [...prev.components, newComponent] } : null);
     setSelectedComponentId(newComponent.id);
-    setActivePanel('properties'); // OUVRE AUTOMATIQUEMENT LE PANNEAU PROPRIÉTÉS
+    setActiveTab('properties');
     return newComponent.id;
   };
   
-  // Mise à jour d'un composant existant
   const handleUpdateComponent = (id: string, updates: Partial<Component>) => {
-      setScript(prev => {
-          if (!prev) return null;
-          return {
-              ...prev,
-              components: prev.components.map(c => 
-                c.id === id ? mergeDeep(c, updates) : c
-              ),
-          };
-      });
+    setScript(prev => {
+      if (!prev) return null;
+      return {
+        ...prev,
+        components: prev.components.map(c => 
+          c.id === id ? mergeDeep(c, updates) : c
+        ),
+      };
+    });
   };
 
-  // Mise à jour de la position d'un composant après un glisser-déposer
   const handleUpdateComponentPosition = useCallback((id: string, delta: { x: number; y: number }) => {
     setScript(prev => {
-        if (!prev) return null;
-        
-        const allComponents = prev.components;
-        const draggedComponent = allComponents.find(c => c.id === id);
-        if (!draggedComponent || draggedComponent.parentId) return prev;
+      if (!prev) return null;
+      const component = prev.components.find(c => c.id === id);
+      if (!component) return prev;
+      
+      const newPosition = {
+          x: component.position.x + delta.x,
+          y: component.position.y + delta.y
+      };
 
-        const updatedComponents = allComponents.map(c => {
-            if (c.id === id) {
-                return { ...c, position: { x: c.position.x + delta.x, y: c.position.y + delta.y } };
-            }
-            return c;
-        });
-
-        return { ...prev, components: updatedComponents };
+      return {
+        ...prev,
+        components: prev.components.map(c => 
+          c.id === id ? { ...c, position: newPosition } : c
+        ),
+      };
     });
   }, [setScript]);
 
-  // Suppression d'un composant (et de ses enfants)
   const handleRemoveComponent = (id: string) => {
     if (!script) return;
-
     const idsToRemove = new Set<string>([id]);
-    let changed = true;
-    while (changed) {
-        changed = false;
-        script.components.forEach(c => {
-            if (c.parentId && idsToRemove.has(c.parentId) && !idsToRemove.has(c.id)) {
-                idsToRemove.add(c.id);
-                changed = true;
-            }
-        });
-    }
-
-    setScript(prev => {
-        if (!prev) return null;
-        return {
-            ...prev,
-            components: prev.components.filter(c => !idsToRemove.has(c.id)),
-        };
-    });
-
-    if (selectedComponentId && idsToRemove.has(selectedComponentId)) {
-        setSelectedComponentId(null);
-    }
+    // Logique pour supprimer aussi les enfants si nécessaire
+    setScript(prev => prev ? { ...prev, components: prev.components.filter(c => !idsToRemove.has(c.id)) } : null);
+    if (selectedComponentId === id) setSelectedComponentId(null);
   };
 
-  // Duplication d'un composant
   const handleDuplicateComponent = (id: string) => {
     const componentToDuplicate = script?.components.find(c => c.id === id);
     if (componentToDuplicate) {
@@ -198,7 +159,6 @@ export const ScriptEditor: React.FC = () => {
     }
   };
 
-  // Mise à jour des propriétés de la page courante
   const handleUpdatePage = (updates: Partial<ScriptPage>) => {
     setScript(prev => prev ? {
       ...prev,
@@ -206,7 +166,6 @@ export const ScriptEditor: React.FC = () => {
     } : null);
   };
 
-  // Importation d'un script depuis un fichier JSON
   const handleImportScript = (importedScript: Script) => {
     resetState(importedScript);
     const homePage = importedScript.pages.find(p => p.isHomePage) || importedScript.pages[0];
@@ -217,14 +176,25 @@ export const ScriptEditor: React.FC = () => {
     return <div>Chargement du script...</div>;
   }
 
-  // Affiche le contenu du panneau latéral en fonction de l'onglet actif
+  const tabs = [
+    { id: 'components', label: 'Composants', icon: 'LayoutGrid' },
+    { id: 'layers', label: 'Éléments', icon: 'Layers' },
+    { id: 'pages', label: 'Pages', icon: 'File' },
+    { id: 'workflows', label: 'Workflows', icon: 'Zap' },
+    { id: 'variables', label: 'Variables', icon: 'Database' },
+    { id: 'properties', label: 'Propriétés', icon: 'Settings' },
+  ];
+
+  const activeTabInfo = tabs.find(tab => tab.id === activeTab);
+
   const renderPanelContent = () => {
-    switch (activePanel) {
+    switch (activeTab) {
       case 'components': return <ComponentPalette onAddComponent={handleAddComponent} />;
+      case 'layers': return <LayersPanel components={componentsOnCurrentPage} allComponents={script.components} selectedComponentId={selectedComponentId} onSelectComponent={setSelectedComponentId} onRemoveComponent={handleRemoveComponent} />;
       case 'pages': return <PageManager script={script} setScript={setScript} currentPageId={currentPageId} setCurrentPageId={setCurrentPageId} />;
       case 'workflows': return <WorkflowPanel script={script} setScript={setScript} currentPageId={currentPageId} />;
       case 'variables': return <VariablesPanel script={script} setScript={setScript} />;
-      case 'properties': return <PropertiesPanel selectedComponent={selectedComponent} onUpdateComponent={handleUpdateComponent} pages={script.pages} currentPageId={currentPageId} script={script} setActivePanel={setActivePanel} componentsOnPage={componentsOnCurrentPage} />;
+      case 'properties': return <PropertiesPanel selectedComponent={selectedComponent} onUpdateComponent={handleUpdateComponent} pages={script.pages} currentPageId={currentPageId} script={script} setActivePanel={setActiveTab} componentsOnPage={componentsOnCurrentPage} />;
       default: return null;
     }
   };
@@ -238,8 +208,6 @@ export const ScriptEditor: React.FC = () => {
           onImportScript={handleImportScript}
           isPreviewMode={isPreviewMode}
           onTogglePreview={() => setIsPreviewMode(!isPreviewMode)}
-          currentDevice={device}
-          onDeviceChange={setDevice}
           undo={undo}
           redo={redo}
           canUndo={canUndo}
@@ -249,12 +217,12 @@ export const ScriptEditor: React.FC = () => {
           theme={theme}
           setTheme={setTheme}
         />
-        <div className="flex-1 flex overflow-hidden">
+        <div className="flex-1 relative overflow-hidden">
           <ChatPanel isOpen={isChatOpen} onClose={() => setIsChatOpen(false)} script={script} />
-
-          <div className="flex-1 flex flex-col overflow-hidden">
+          
+          <div className="h-full flex flex-col overflow-hidden">
             {isPreviewMode ? (
-              <PreviewPane script={script} currentPageId={currentPageId} device={device} onNavigateToPage={setCurrentPageId} />
+              <PreviewPane script={script} currentPageId={currentPageId} device="desktop" onNavigateToPage={setCurrentPageId} />
             ) : (
               <div className="flex-1 flex overflow-hidden">
                  <Canvas
@@ -266,7 +234,6 @@ export const ScriptEditor: React.FC = () => {
                     onDuplicateComponent={handleDuplicateComponent}
                     selectedComponentId={selectedComponentId}
                     onSelectComponent={setSelectedComponentId}
-                    device={device}
                     onAddComponent={handleAddComponent}
                     currentPage={currentPage}
                     onUpdatePage={handleUpdatePage}
@@ -274,18 +241,45 @@ export const ScriptEditor: React.FC = () => {
                     setInlineEditingId={setInlineEditingId}
                     theme={theme}
                   />
+                  
                   {isRightPanelOpen && (
-                    <div className="flex-shrink-0 flex animate-slide-in-from-right">
-                       <VerticalMenu activePanel={activePanel} setActivePanel={setActivePanel} />
-                       <SidePanel activePanel={activePanel}>{renderPanelContent()}</SidePanel>
-                       <LayersPanel
-                          components={componentsOnCurrentPage}
-                          allComponents={script.components}
-                          selectedComponentId={selectedComponentId}
-                          onSelectComponent={setSelectedComponentId}
-                          onRemoveComponent={handleRemoveComponent}
-                        />
-                    </div>
+                    <aside className="w-[380px] bg-white dark:bg-gray-vs-800 border-l border-slate-200 dark:border-gray-vs-700 flex shadow-lg flex-shrink-0 animate-slide-in-from-right">
+                      {/* Barre d'onglets verticale */}
+                      <div className="w-20 bg-slate-50 dark:bg-gray-vs-800 border-r border-slate-200 dark:border-gray-vs-700 flex flex-col items-center py-4 space-y-2">
+                          {tabs.map(tab => {
+                             const Icon = Icons[tab.icon as keyof typeof Icons] as React.ElementType;
+                             return (
+                                <button
+                                  key={tab.id}
+                                  onClick={() => setActiveTab(tab.id)}
+                                  title={tab.label}
+                                  disabled={tab.id === 'properties' && !selectedComponent}
+                                  className={`flex flex-col items-center justify-center w-16 h-16 rounded-lg transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed ${
+                                    activeTab === tab.id 
+                                      ? 'bg-blue-600 text-white' 
+                                      : 'text-slate-500 dark:text-gray-vs-300 hover:bg-slate-200 dark:hover:bg-gray-vs-700 hover:text-slate-700 dark:hover:text-white'
+                                  }`}
+                                >
+                                  <Icon size={22} />
+                                  <span className="text-xs mt-1">{tab.label}</span>
+                                </button>
+                             )
+                          })}
+                      </div>
+
+                      {/* Contenu du panneau */}
+                      <div className="flex-1 flex flex-col">
+                        <header className="flex items-center justify-between p-4 border-b border-slate-200 dark:border-gray-vs-700">
+                          <h2 className="text-lg font-semibold text-slate-800 dark:text-white">{activeTabInfo?.label}</h2>
+                           <button onClick={() => setIsRightPanelOpen(false)} className="p-2 text-slate-400 hover:bg-slate-200 dark:hover:bg-gray-vs-700 rounded-full">
+                             <Icons.X size={18} />
+                           </button>
+                        </header>
+                        <div className="flex-1 overflow-y-auto p-4">
+                          {renderPanelContent()}
+                        </div>
+                      </div>
+                    </aside>
                   )}
               </div>
             )}
