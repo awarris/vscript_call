@@ -75,9 +75,40 @@ export const VariablesPanel: React.FC<VariablesPanelProps> = ({ script, setScrip
 
   const handleInputChange = (field: keyof GlobalVariable, value: any) => {
     if (editingVariable) {
-      setEditingVariable({ ...editingVariable, [field]: value });
+      let newDefaultValue = editingVariable.defaultValue;
+
+        // Convertir la valeur par défaut si le type change
+        if (field === 'type') {
+            switch(value) {
+                case 'number':
+                    newDefaultValue = Number(editingVariable.defaultValue) || 0;
+                    break;
+                case 'boolean':
+                    newDefaultValue = Boolean(editingVariable.defaultValue);
+                    break;
+                case 'string':
+                default:
+                    newDefaultValue = String(editingVariable.defaultValue);
+                    break;
+            }
+        }
+      setEditingVariable({ ...editingVariable, [field]: value, defaultValue: newDefaultValue });
     }
   };
+  
+  const handleDefaultValueChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!editingVariable) return;
+    let value: any = e.target.value;
+    switch(editingVariable.type) {
+        case 'number':
+            value = Number(e.target.value);
+            break;
+        case 'boolean':
+            value = e.target.checked;
+            break;
+    }
+    setEditingVariable({...editingVariable, defaultValue: value});
+  }
 
   // Formulaire d'édition/création
   if (editingVariable) {
@@ -118,6 +149,7 @@ export const VariablesPanel: React.FC<VariablesPanelProps> = ({ script, setScrip
                 onChange={(e) => handleInputChange('componentId', e.target.value)}
                 className="w-full mt-1 px-3 py-2 text-sm border border-slate-300 rounded-lg bg-white"
             >
+                <option value="">Aucun (utilise la valeur par défaut)</option>
                 {script.components.map(comp => (
                     <option key={comp.id} value={comp.id}>
                         {comp.type} ({comp.id.slice(-4)}) - Page: {pageNameById.get(comp.pageId) || 'Inconnue'}
@@ -127,6 +159,26 @@ export const VariablesPanel: React.FC<VariablesPanelProps> = ({ script, setScrip
             <p className="text-xs text-slate-500 mt-1">Lier la variable à un composant du canevas.</p>
         </div>
 
+        {!editingVariable.componentId && (
+            <div>
+                <label className="text-sm font-medium text-slate-700">Valeur par défaut</label>
+                {editingVariable.type === 'boolean' ? (
+                    <input
+                        type="checkbox"
+                        checked={Boolean(editingVariable.defaultValue)}
+                        onChange={handleDefaultValueChange}
+                        className="mt-2"
+                    />
+                ) : (
+                    <input
+                        type={editingVariable.type === 'number' ? 'number' : 'text'}
+                        value={editingVariable.defaultValue}
+                        onChange={handleDefaultValueChange}
+                        className="w-full mt-1 px-3 py-2 text-sm border border-slate-300 rounded-lg"
+                    />
+                )}
+            </div>
+        )}
 
         <div className="flex items-center space-x-2">
           <button onClick={handleSaveVariable} className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">

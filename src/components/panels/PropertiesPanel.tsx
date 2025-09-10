@@ -1,7 +1,7 @@
 // chemin: src/components/panels/PropertiesPanel.tsx
 
-import React from 'react';
-import { Settings, Palette, Type, Link2, AlignCenter, AlignLeft, AlignRight, Bold, Italic, Underline, Globe, Image as ImageIcon, MessageSquare, ListChecks, Trash2, Zap, Eye } from 'lucide-react';
+import React, { useState } from 'react';
+import { Settings, Palette, Type, Link2, AlignCenter, AlignLeft, AlignRight, Bold, Italic, Underline, Globe, Image as ImageIcon, MessageSquare, ListChecks, Trash2, Zap, Eye, Variable } from 'lucide-react';
 import { Component, ScriptPage, ComponentStyle, Script } from '../../types';
 
 interface PropertiesPanelProps {
@@ -32,7 +32,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
     );
   }
 
-  // --- Fonctions utilitaires ---
+  const { globalVariables } = script;
 
   const updateConfig = (updates: Partial<Component['config']>) => {
     onUpdateComponent(selectedComponent.id, {
@@ -80,15 +80,13 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
     });
   };
 
-  // --- Sections de propriétés ---
-
   const renderContentSection = () => (
     <>
       {(['paragraphe', 'h1', 'button'].includes(selectedComponent.type)) && (
-         <TextareaInput label="Contenu" value={selectedComponent.config.value || ''} onChange={val => updateConfig({ value: val })} />
+         <TextareaInput label="Contenu" value={selectedComponent.config.value || ''} onChange={val => updateConfig({ value: val })} globalVariables={globalVariables} />
       )}
       {selectedComponent.config.placeholder !== undefined && (
-        <PropertyInput label="Placeholder" value={selectedComponent.config.placeholder || ''} onChange={val => updateConfig({ placeholder: val })} />
+        <PropertyInput label="Placeholder" value={selectedComponent.config.placeholder || ''} onChange={val => updateConfig({ placeholder: val })} globalVariables={globalVariables}/>
       )}
        {selectedComponent.type === 'button' && (
             <div className="space-y-2 mt-4">
@@ -117,6 +115,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
         label="Texte du libellé"
         value={selectedComponent.config.label || ''}
         onChange={val => updateConfig({ label: val })}
+        globalVariables={globalVariables}
       />
       <TypographyEditor style={selectedComponent.config.labelStyle} onUpdateStyle={updateLabelStyle} onToggleStyle={(...args) => toggleStyle(...args, true)} />
     </div>
@@ -128,11 +127,13 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                 label="URL de l'image (src)"
                 value={selectedComponent.config.src || ''}
                 onChange={val => updateConfig({ src: val })}
+                globalVariables={globalVariables}
             />
             <PropertyInput
                 label="Texte alternatif (alt)"
                 value={selectedComponent.config.alt || ''}
                 onChange={val => updateConfig({ alt: val })}
+                globalVariables={globalVariables}
             />
         </div>
     );
@@ -144,11 +145,13 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
         label="URL de la source (src)"
         value={selectedComponent.config.src || ''}
         onChange={val => updateConfig({ src: val, htmlContent: '' })}
+        globalVariables={globalVariables}
       />
       <TextareaInput
         label="Contenu HTML direct"
         value={selectedComponent.config.htmlContent || ''}
         onChange={val => updateConfig({ htmlContent: val, src: '' })}
+        globalVariables={globalVariables}
       />
     </div>
   );
@@ -435,28 +438,81 @@ const Section: React.FC<{ title: string; icon: React.ElementType; children: Reac
   </div>
 );
 
-const PropertyInput: React.FC<{ label: string; value: string; onChange: (value: string) => void }> = ({ label, value, onChange }) => (
-    <div>
-        <label className="block text-xs font-semibold text-slate-700 mb-1">{label}</label>
-        <input
-            type="text"
-            value={value}
-            onChange={(e) => onChange(e.target.value)}
-            className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-        />
-    </div>
-);
+const PropertyInput: React.FC<{ label: string; value: string; onChange: (value: string) => void, globalVariables: Script['globalVariables'] }> = ({ label, value, onChange, globalVariables }) => {
+    const [showVars, setShowVars] = useState(false);
 
-const TextareaInput: React.FC<{ label: string; value: string; onChange: (value: string) => void }> = ({ label, value, onChange }) => (
-    <div>
-        <label className="block text-xs font-semibold text-slate-700 mb-1">{label}</label>
-        <textarea
-            value={value}
-            onChange={(e) => onChange(e.target.value)}
-            className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 h-24 resize-none"
-        />
-    </div>
-);
+    const handleInsertVariable = (varName: string) => {
+        onChange(`${value}{{${varName}}}`);
+        setShowVars(false);
+    }
+
+    return (
+        <div>
+            <label className="block text-xs font-semibold text-slate-700 mb-1">{label}</label>
+            <div className="relative">
+                <input
+                    type="text"
+                    value={value}
+                    onChange={(e) => onChange(e.target.value)}
+                    className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+                <button 
+                    onClick={() => setShowVars(!showVars)} 
+                    className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-blue-600 rounded-full"
+                    title="Insérer une variable"
+                >
+                    <Variable size={16} />
+                </button>
+                {showVars && (
+                    <div className="absolute z-10 top-full mt-1 w-full bg-white border rounded-lg shadow-lg">
+                        {globalVariables.map(v => (
+                            <div key={v.id} onClick={() => handleInsertVariable(v.name)} className="px-3 py-2 text-sm hover:bg-slate-100 cursor-pointer">
+                                {v.name}
+                            </div>
+                        ))}
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+};
+
+const TextareaInput: React.FC<{ label: string; value: string; onChange: (value: string) => void, globalVariables: Script['globalVariables'] }> = ({ label, value, onChange, globalVariables }) => {
+     const [showVars, setShowVars] = useState(false);
+
+    const handleInsertVariable = (varName: string) => {
+        onChange(`${value}{{${varName}}}`);
+        setShowVars(false);
+    }
+    return (
+        <div>
+            <label className="block text-xs font-semibold text-slate-700 mb-1">{label}</label>
+             <div className="relative">
+                <textarea
+                    value={value}
+                    onChange={(e) => onChange(e.target.value)}
+                    className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 h-24 resize-none"
+                />
+                 <button 
+                    onClick={() => setShowVars(!showVars)} 
+                    className="absolute right-2 top-2 p-1 text-slate-400 hover:text-blue-600 rounded-full"
+                    title="Insérer une variable"
+                >
+                    <Variable size={16} />
+                </button>
+                 {showVars && (
+                    <div className="absolute z-10 top-full mt-1 w-full bg-white border rounded-lg shadow-lg">
+                        {globalVariables.map(v => (
+                            <div key={v.id} onClick={() => handleInsertVariable(v.name)} className="px-3 py-2 text-sm hover:bg-slate-100 cursor-pointer">
+                                {v.name}
+                            </div>
+                        ))}
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+};
 
 
 const NumberInput: React.FC<{ label: string; value: number; onChange: (value: number) => void }> = ({ label, value, onChange }) => (

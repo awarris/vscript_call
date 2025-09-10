@@ -1,7 +1,7 @@
 // chemin: src/components/PreviewPane/PreviewPane.tsx
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Component, Script, WorkflowTriggerType, ComponentStyle } from '../../types';
+import { Component, Script, WorkflowTriggerType, ComponentStyle, GlobalVariable } from '../../types';
 import { File, Delete, ArrowLeft, ArrowRight } from 'lucide-react';
 import { ViewState } from '../../pages/ScriptEditor';
 import { CANVAS_HEIGHT, CANVAS_WIDTH } from '../Canvas/Canvas';
@@ -149,6 +149,15 @@ export const PreviewPane: React.FC<PreviewPaneProps> = ({
   const currentPageIndex = script.pages.findIndex(p => p.id === currentPageId);
   const components = script.components.filter(c => c.pageId === currentPageId);
   const workflowRules = script.workflowRules.filter(r => r.pageId === currentPageId);
+
+  const variableMap = new Map<string, GlobalVariable>(script.globalVariables.map(v => [v.name, v]));
+
+    const resolveValue = (value: any): string => {
+        if (typeof value !== 'string') return value;
+        return value.replace(/\{\{(V_[a-zA-Z0-9_]+)\}\}/g, (match, varName) => {
+            return variables[varName] !== undefined ? String(variables[varName]) : match;
+        });
+    };
 
   useEffect(() => {
     const initialVisibility: Record<string, boolean> = {};
@@ -311,9 +320,9 @@ const executeWorkflow = (triggerType: WorkflowTriggerType, componentId: string) 
 
     switch (component.type) {
         case 'paragraphe': case 'h1':
-            return <div style={style} {...eventHandlers}>{component.config.value || component.config.text}</div>;
+            return <div style={style} {...eventHandlers}>{resolveValue(component.config.value || component.config.text)}</div>;
         case 'button':
-            return <button style={{...style, cursor: 'pointer'}} {...eventHandlers}>{component.config.value || component.config.text}</button>;
+            return <button style={{...style, cursor: 'pointer'}} {...eventHandlers}>{resolveValue(component.config.value || component.config.text)}</button>;
         case 'input':
             return <input {...component.config.attributes} style={style} value={componentValues[component.id] || ''} onChange={(e) => handleComponentValueChange(component.id, e.target.value)} {...eventHandlers} />;
         case 'inputDate':
@@ -343,7 +352,7 @@ const executeWorkflow = (triggerType: WorkflowTriggerType, componentId: string) 
                 </select>
             );
         case 'checkbox':
-            return <div style={{...style, display: 'flex', alignItems: 'center'}}><input type="checkbox" checked={componentValues[component.id] || false} onChange={(e) => handleComponentValueChange(component.id, e.target.checked)} {...eventHandlers} /> <span style={{ marginLeft: '8px' }}>{component.config.label}</span></div>;
+            return <div style={{...style, display: 'flex', alignItems: 'center'}}><input type="checkbox" checked={componentValues[component.id] || false} onChange={(e) => handleComponentValueChange(component.id, e.target.checked)} {...eventHandlers} /> <span style={{ marginLeft: '8px' }}>{resolveValue(component.config.label)}</span></div>;
         case 'calculator':
             return <FunctionalCalculator styleConfig={component.config.style as ComponentStyle} />;
         case 'divPannel': case 'ficheClient': case 'container':
@@ -405,7 +414,7 @@ const executeWorkflow = (triggerType: WorkflowTriggerType, componentId: string) 
               <div key={component.id} style={{ position: 'absolute', left: component.position.x, top: component.position.y, width: component.size.width, height: 'auto' }}>
                 {component.config.label && (
                     <label style={{...component.config.labelStyle, display: 'block', marginBottom: '4px'}}>
-                        {component.config.label}
+                        {resolveValue(component.config.label)}
                     </label>
                 )}
                 <div style={{height: component.size.height}}>

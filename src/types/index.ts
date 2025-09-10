@@ -104,7 +104,7 @@ export interface GlobalVariable {
   type: 'string' | 'number' | 'boolean';
   defaultValue: any;
   description?: string;
-  componentId?: string;
+  componentId?: string; // Optionnel: ID du composant auquel cette variable est liée
 }
 
 export interface ComponentLibraryItem {
